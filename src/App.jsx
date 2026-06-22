@@ -696,20 +696,37 @@ export default function App(){
   useEffect(()=>{
     async function load(){
       try{
-        const [{data:tr},{data:ps},{data:trs}]=await Promise.all([
-          sb.from("tracker").select("data").eq("id","main").single(),
-          sb.from("ps_data").select("data").eq("id","main").single(),
-          sb.from("tr_state").select("data").eq("id","main").single(),
+        const [rTr,rPs,rTrs]=await Promise.all([
+          sb.from("tracker").select("*").eq("id","main").single(),
+          sb.from("ps_data").select("*").eq("id","main").single(),
+          sb.from("tr_state").select("*").eq("id","main").single(),
         ]);
+        console.log("[SB] tracker row:",rTr);
+        console.log("[SB] ps_data row:",rPs);
+        console.log("[SB] tr_state row:",rTrs);
+        if(rTr.error||rPs.error||rTrs.error){
+          console.error("[SB] errors:",rTr.error,rPs.error,rTrs.error);
+          setSbErr(`Supabase: ${(rTr.error||rPs.error||rTrs.error)?.message}`);
+          setSbLoading(false);
+          return;
+        }
+        const tr=rTr.data; const ps=rPs.data; const trs=rTrs.data;
+        /* tracker: tenta data.IC/QA, depois IC/QA direto na raiz */
+        const trackerRaw=tr?.data?.IC ? tr.data : tr;
+        /* ps_data: tenta data.list, depois list direto */
+        const psList=ps?.data?.list ?? ps?.list ?? null;
+        /* tr_state: tenta data, depois raiz */
+        const trsData=trs?.data ?? trs;
         setData(d=>{
           const t2={...d["T2"]};
-          if(tr?.data) t2["Desenvolvimento"]=fromTracker(tr.data);
-          if(ps?.data?.list) t2["Fichas PS"]={list:ps.data.list};
-          if(trs?.data) t2["Treinamentos"]={data:trs.data};
+          if(trackerRaw) t2["Desenvolvimento"]=fromTracker(trackerRaw);
+          if(psList) t2["Fichas PS"]={list:psList};
+          if(trsData) t2["Treinamentos"]={data:trsData};
           return{...d,T2:t2};
         });
       }catch(e){
-        setSbErr("Falha ao carregar dados do Supabase.");
+        console.error("[SB] catch:",e);
+        setSbErr("Falha ao carregar dados do Supabase: "+e.message);
       }finally{
         setSbLoading(false);
       }
