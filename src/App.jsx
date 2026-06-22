@@ -121,7 +121,7 @@ function ModalWrap({ children, onClose, width = 460 }) {
 function LoginModal({ onLogin, onClose }) {
   const [name, setName]       = useState("");
   const [pass, setPass]       = useState("");
-  const [mode, setMode]       = useState("user"); // "user" | "creator"
+  const [mode, setMode]       = useState("user");
   const [error, setError]     = useState("");
 
   function handleUserLogin() {
@@ -234,7 +234,6 @@ function AdminModal({ turnos, versions, editors, onSetVersion, onSetEditors, onC
         <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: TXM }}>×</button>
       </div>
 
-      {/* turno selector */}
       <div style={{ marginBottom: 18 }}>
         <label style={{ fontSize: 12, color: TXM, display: "block", marginBottom: 6 }}>Turno selecionado</label>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -252,7 +251,6 @@ function AdminModal({ turnos, versions, editors, onSetVersion, onSetEditors, onC
         </div>
       </div>
 
-      {/* section tabs */}
       <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${BDR}`, marginBottom: 18 }}>
         {["editors","version"].map(s => (
           <button key={s} onClick={() => setActiveSection(s)}
@@ -873,7 +871,6 @@ export default function App() {
           <div style={{ fontSize: 13, color: TXM, marginTop: 2, marginLeft: 38 }}>Acompanhe o desempenho por turno e tarefa</div>
         </div>
 
-        {/* right side: user + actions */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {isCreator && (
             <button onClick={() => setShowAdmin(true)}
