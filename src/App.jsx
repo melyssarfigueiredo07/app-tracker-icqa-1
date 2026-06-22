@@ -37,7 +37,17 @@ function makeEmptyTurno() { return {}; }
 
 function initialData() {
   const data = {};
-  INIT_TURNOS.forEach(turno => { data[turno] = {}; });
+  INIT_TURNOS.forEach((turno, i) => {
+    data[turno] = {};
+    const names = [
+      ["Ana Lima", "Bruno Souza", "Carla Dias"],
+      ["Diego Alves", "Elaine Faria", "Fábio Costa"],
+      ["Gabi Nunes", "Henrique Teles", "Ingrid Melo"],
+    ][i] || [];
+    names.forEach(rep => {
+      data[turno][rep] = { admissao: "", ...Object.fromEntries(TAREFAS.map(t => [t, Math.floor(Math.random() * 60 + 30)])) };
+    });
+  });
   return data;
 }
 
@@ -221,7 +231,7 @@ function AdminModal({ turnos, versions, editors, onSetVersion, onSetEditors, onC
           <div style={{ fontSize: 16, fontWeight: 500, color: TXT }}>Painel de Administração</div>
           <div style={{ fontSize: 12, color: TXM, marginTop: 2 }}>Gerencie editores e versões por turno</div>
         </div>
-        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: TXM }}>×</button>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: TXM }}>&times;</button>
       </div>
 
       <div style={{ marginBottom: 18 }}>
@@ -401,7 +411,7 @@ function ManageTurnosModal({ turnos, onRename, onAdd, onRemove, onClose }) {
     <ModalWrap onClose={onClose} width={440}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div style={{ fontSize: 16, fontWeight: 500, color: TXT }}>Gerenciar Turnos</div>
-        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: TXM }}>×</button>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: TXM }}>&times;</button>
       </div>
       {error && <div style={{ background: "#3A0D1A", color: "#E05C7A", borderRadius: 8, padding: "9px 13px", fontSize: 13, marginBottom: 14 }}>{error}</div>}
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
@@ -419,7 +429,7 @@ function ManageTurnosModal({ turnos, onRename, onAdd, onRemove, onClose }) {
                 <button onClick={() => saveEdit(i)}
                   style={{ padding: "5px 14px", borderRadius: 7, border: "none", background: Y, color: "#000", cursor: "pointer", fontSize: 13, fontWeight: 500 }}>OK</button>
                 <button onClick={() => setEditingIdx(null)}
-                  style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${BDR}`, background: "none", cursor: "pointer", fontSize: 13, color: TXM }}>✕</button>
+                  style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${BDR}`, background: "none", cursor: "pointer", fontSize: 13, color: TXM }}>&#10005;</button>
               </>
             ) : (
               <>
@@ -427,7 +437,7 @@ function ManageTurnosModal({ turnos, onRename, onAdd, onRemove, onClose }) {
                 <button onClick={() => startEdit(i)}
                   style={{ padding: "5px 12px", borderRadius: 7, border: `1px solid ${BDR}`, background: "none", cursor: "pointer", fontSize: 12, color: TXM }}>Renomear</button>
                 <button onClick={() => { if (turnos.length <= 1) { setError("É necessário ter ao menos 1 turno."); return; } onRemove(i); }}
-                  style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid #3A0D1A", background: "none", cursor: "pointer", fontSize: 12, color: "#E05C7A" }}>✕</button>
+                  style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid #3A0D1A", background: "none", cursor: "pointer", fontSize: 12, color: "#E05C7A" }}>&#10005;</button>
               </>
             )}
           </div>
@@ -515,7 +525,7 @@ function ImportModal({ turno, onImport, onClose }) {
           <div style={{ fontSize: 16, fontWeight: 500, color: TXT }}>Vincular planilha — {turno}</div>
           <div style={{ fontSize: 13, color: TXM }}>Importe dados de um arquivo CSV</div>
         </div>
-        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: TXM }}>×</button>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: TXM }}>&times;</button>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 24 }}>
         {["upload","map","preview"].map((s, i) => (
@@ -542,7 +552,7 @@ function ImportModal({ turno, onImport, onClose }) {
             onClick={() => fileRef.current?.click()}
             onMouseEnter={e => e.currentTarget.style.borderColor = Y}
             onMouseLeave={e => e.currentTarget.style.borderColor = BDR}>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>📂</div>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>&#128194;</div>
             <div style={{ fontSize: 14, color: TXT, marginBottom: 4 }}>Arraste ou clique para selecionar</div>
             <div style={{ fontSize: 12, color: TXM }}>Suporta .csv</div>
             <input ref={fileRef} type="file" accept=".csv" style={{ display: "none" }}
@@ -648,7 +658,7 @@ function RepCard({ rep, values, onUpdate, onRemove, canEdit }) {
           <div style={{ fontSize: 14, fontWeight: 500, color: TXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 3 }}>{rep}</div>
           {tempoDeCasa(values.admissao) && (
             <div style={{ fontSize: 11, color: TXM, marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
-              <span style={{ fontSize: 10 }}>🕐</span>
+              <span style={{ fontSize: 10 }}>&#128336;</span>
               {tempoDeCasa(values.admissao)} de casa
             </div>
           )}
@@ -684,7 +694,7 @@ function RepCard({ rep, values, onUpdate, onRemove, canEdit }) {
               <div style={{ width: 8, height: 8, borderRadius: 2, background: TASK_COLORS[t], flexShrink: 0 }} />
               <span style={{ fontSize: 12, color: TXT, width: 96, flexShrink: 0 }}>{t}</span>
               <button onClick={() => liveUpdate(t, Math.max(0, values[t] - 25))}
-                style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${BDR}`, background: SUR2, color: TXM, cursor: "pointer", fontSize: 15, lineHeight: 1, flexShrink: 0 }}>−</button>
+                style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${BDR}`, background: SUR2, color: TXM, cursor: "pointer", fontSize: 15, lineHeight: 1, flexShrink: 0 }}>&#8722;</button>
               <input type="range" min={0} max={100} step={25} value={values[t]}
                 onChange={e => liveUpdate(t, Number(e.target.value))}
                 style={{ flex: 1, accentColor: Y }} />
@@ -846,12 +856,12 @@ export default function App() {
           {isCreator && (
             <button onClick={() => setShowAdmin(true)}
               style={{ padding: "7px 14px", borderRadius: 8, border: "1px solid #20103A", background: "#20103A", color: "#A47CF0", cursor: "pointer", fontSize: 12, fontWeight: 500 }}>
-              ⚙ Admin
+              &#9881; Admin
             </button>
           )}
           <button onClick={() => setShowImport(true)}
             style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${Y}`, background: "transparent", color: Y, cursor: "pointer", fontSize: 13, fontWeight: 500 }}>
-            ↑ Importar planilha
+            &#8593; Importar planilha
           </button>
           {currentUser ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -863,7 +873,7 @@ export default function App() {
               </div>
               <button onClick={() => setCurrentUser(null)} title="Sair"
                 style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${BDR}`, background: "none", cursor: "pointer", fontSize: 13, color: TXM }}>
-                ↩
+                &#8617;
               </button>
             </div>
           ) : (
@@ -920,7 +930,7 @@ export default function App() {
               }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = Y; e.currentTarget.style.color = Y; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = BDR; e.currentTarget.style.color = TXM; }}>
-              ⚙ Gerenciar turnos
+              &#9881; Gerenciar turnos
             </button>
           )}
         </div>
@@ -933,7 +943,7 @@ export default function App() {
               style={{ maxWidth: 240, background: SUR, border: `1px solid ${BDR}`, color: TXT, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }} />
             {!canEditTab && currentUser && (
               <span style={{ fontSize: 12, color: TXM, background: SUR, borderRadius: 8, padding: "6px 12px", border: `1px solid ${BDR}` }}>
-                👁 Modo visualização
+                &#128065; Modo visualização
               </span>
             )}
             {!currentUser && (
@@ -984,9 +994,9 @@ export default function App() {
       }}>
         <div style={{ fontSize: 11, color: TXM, display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ color: Y, fontWeight: 600, letterSpacing: "0.5px" }}>{activeVersion}</span>
-          <span>·</span>
+          <span>&#183;</span>
           <span>{activeTab}</span>
-          {canEditTab && <span style={{ color: "#3EC97A", marginLeft: 4 }}>✓ editando</span>}
+          {canEditTab && <span style={{ color: "#3EC97A", marginLeft: 4 }}>&#10003; editando</span>}
         </div>
         <div style={{ fontSize: 10, color: "#555", fontStyle: "italic", letterSpacing: "0.3px" }}>
           Criado por Melyssa Rangel de Figueiredo
