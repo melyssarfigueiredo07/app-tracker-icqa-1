@@ -37,17 +37,7 @@ function makeEmptyTurno() { return {}; }
 
 function initialData() {
   const data = {};
-  INIT_TURNOS.forEach((turno, i) => {
-    data[turno] = {};
-    const names = [
-      ["Ana Lima", "Bruno Souza", "Carla Dias"],
-      ["Diego Alves", "Elaine Faria", "Fábio Costa"],
-      ["Gabi Nunes", "Henrique Teles", "Ingrid Melo"],
-    ][i] || [];
-    names.forEach(rep => {
-      data[turno][rep] = { admissao: "", ...Object.fromEntries(TAREFAS.map(t => [t, Math.floor(Math.random() * 60 + 30)])) };
-    });
-  });
+  INIT_TURNOS.forEach(turno => { data[turno] = {}; });
   return data;
 }
 
@@ -119,10 +109,10 @@ function ModalWrap({ children, onClose, width = 460 }) {
 
 /* ── LOGIN MODAL ── */
 function LoginModal({ onLogin, onClose }) {
-  const [name, setName]       = useState("");
-  const [pass, setPass]       = useState("");
-  const [mode, setMode]       = useState("user");
-  const [error, setError]     = useState("");
+  const [name, setName]   = useState("");
+  const [pass, setPass]   = useState("");
+  const [mode, setMode]   = useState("user");
+  const [error, setError] = useState("");
 
   function handleUserLogin() {
     const n = name.trim();
@@ -192,7 +182,7 @@ function LoginModal({ onLogin, onClose }) {
   );
 }
 
-/* ── ADMIN PANEL MODAL (creator only) ── */
+/* ── ADMIN PANEL MODAL ── */
 function AdminModal({ turnos, versions, editors, onSetVersion, onSetEditors, onClose }) {
   const [activeSection, setActiveSection] = useState("editors");
   const [selectedTurno, setSelectedTurno] = useState(turnos[0] || "");
@@ -271,7 +261,6 @@ function AdminModal({ turnos, versions, editors, onSetVersion, onSetEditors, onC
           <div style={{ fontSize: 13, color: TXM, marginBottom: 12 }}>
             Editores com acesso ao <span style={{ color: TXT }}>{selectedTurno}</span>:
           </div>
-
           {currentEditors.length === 0 ? (
             <div style={{ textAlign: "center", padding: "16px 0", color: TXM, fontSize: 13, background: SUR, borderRadius: 10, marginBottom: 14 }}>
               Nenhum editor definido. Apenas a criadora pode editar.
@@ -290,7 +279,6 @@ function AdminModal({ turnos, versions, editors, onSetVersion, onSetEditors, onC
               ))}
             </div>
           )}
-
           <div style={{ borderTop: `1px solid ${BDR}`, paddingTop: 14 }}>
             <div style={{ fontSize: 13, color: TXM, marginBottom: 8 }}>Conceder acesso de editor</div>
             <div style={{ display: "flex", gap: 8 }}>
@@ -315,9 +303,8 @@ function AdminModal({ turnos, versions, editors, onSetVersion, onSetEditors, onC
               {versions[selectedTurno] || CURRENT_VERSION}
             </div>
           </div>
-
           <div style={{ background: SUR, borderRadius: 10, padding: "14px 16px", border: `1px solid ${BDR}`, marginBottom: 16 }}>
-            <div style={{ fontSize: 12, color: TXM, marginBottom: 10 }}>Histórico de versões sugeridas</div>
+            <div style={{ fontSize: 12, color: TXM, marginBottom: 10 }}>Versões disponíveis</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {["T1","T2","T3","T4","T1.1","T2.1","T3.1"].map(v => (
                 <button key={v} onClick={() => onSetVersion(selectedTurno, v)}
@@ -332,7 +319,6 @@ function AdminModal({ turnos, versions, editors, onSetVersion, onSetEditors, onC
               ))}
             </div>
           </div>
-
           <div style={{ borderTop: `1px solid ${BDR}`, paddingTop: 14 }}>
             <div style={{ fontSize: 13, color: TXM, marginBottom: 8 }}>Versão personalizada</div>
             <div style={{ display: "flex", gap: 8 }}>
@@ -417,11 +403,7 @@ function ManageTurnosModal({ turnos, onRename, onAdd, onRemove, onClose }) {
         <div style={{ fontSize: 16, fontWeight: 500, color: TXT }}>Gerenciar Turnos</div>
         <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: TXM }}>×</button>
       </div>
-
-      {error && (
-        <div style={{ background: "#3A0D1A", color: "#E05C7A", borderRadius: 8, padding: "9px 13px", fontSize: 13, marginBottom: 14 }}>{error}</div>
-      )}
-
+      {error && <div style={{ background: "#3A0D1A", color: "#E05C7A", borderRadius: 8, padding: "9px 13px", fontSize: 13, marginBottom: 14 }}>{error}</div>}
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
         {turnos.map((t, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: SUR, borderRadius: 10, padding: "10px 14px", border: `1px solid ${editingIdx === i ? Y : BDR}` }}>
@@ -451,7 +433,6 @@ function ManageTurnosModal({ turnos, onRename, onAdd, onRemove, onClose }) {
           </div>
         ))}
       </div>
-
       <div style={{ borderTop: `1px solid ${BDR}`, paddingTop: 16 }}>
         <div style={{ fontSize: 13, color: TXM, marginBottom: 10 }}>Adicionar novo turno</div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -463,7 +444,6 @@ function ManageTurnosModal({ turnos, onRename, onAdd, onRemove, onClose }) {
             style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: Y, color: "#000", cursor: "pointer", fontSize: 13, fontWeight: 500 }}>+ Adicionar</button>
         </div>
       </div>
-
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}>
         <button onClick={onClose}
           style={{ padding: "8px 22px", borderRadius: 8, border: "none", background: Y, color: "#000", cursor: "pointer", fontSize: 14, fontWeight: 500 }}>Fechar</button>
@@ -472,7 +452,7 @@ function ManageTurnosModal({ turnos, onRename, onAdd, onRemove, onClose }) {
   );
 }
 
-/* ── SPREADSHEET IMPORT MODAL ── */
+/* ── IMPORT MODAL ── */
 function ImportModal({ turno, onImport, onClose }) {
   const [step, setStep] = useState("upload");
   const [headers, setHeaders] = useState([]);
@@ -492,7 +472,7 @@ function ImportModal({ turno, onImport, onClose }) {
   function handleFile(file) {
     setError("");
     const ext = file.name.split(".").pop().toLowerCase();
-    if (!["csv", "xlsx", "xls"].includes(ext)) { setError("Formato não suportado. Use .csv"); return; }
+    if (!["csv","xlsx","xls"].includes(ext)) { setError("Formato não suportado. Use .csv"); return; }
     if (ext === "csv") {
       const reader = new FileReader();
       reader.onload = e => {
@@ -537,7 +517,6 @@ function ImportModal({ turno, onImport, onClose }) {
         </div>
         <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: TXM }}>×</button>
       </div>
-
       <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 24 }}>
         {["upload","map","preview"].map((s, i) => (
           <div key={s} style={{ display: "flex", alignItems: "center" }}>
@@ -554,9 +533,7 @@ function ImportModal({ turno, onImport, onClose }) {
           </div>
         ))}
       </div>
-
       {error && <div style={{ background: "#3A0D1A", color: "#E05C7A", borderRadius: 8, padding: "10px 14px", fontSize: 13, marginBottom: 16 }}>{error}</div>}
-
       {step === "upload" && (
         <div>
           <div onDrop={e => { e.preventDefault(); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); }}
@@ -580,7 +557,6 @@ function ImportModal({ turno, onImport, onClose }) {
           </div>
         </div>
       )}
-
       {step === "map" && (
         <div>
           <div style={{ fontSize: 13, color: TXM, marginBottom: 14 }}>{rows.length} linhas detectadas. Mapeie as colunas.</div>
@@ -611,7 +587,6 @@ function ImportModal({ turno, onImport, onClose }) {
           </div>
         </div>
       )}
-
       {step === "preview" && (
         <div>
           <div style={{ fontSize: 13, color: TXM, marginBottom: 12 }}>{preview.length} reps encontrados.</div>
@@ -681,7 +656,6 @@ function RepCard({ rep, values, onUpdate, onRemove, canEdit }) {
         </div>
         <RadialProgress pct={a} color={Y} size={48} />
       </div>
-
       <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
         {TAREFAS.map(t => {
           const v = values[t];
@@ -697,7 +671,6 @@ function RepCard({ rep, values, onUpdate, onRemove, canEdit }) {
           );
         })}
       </div>
-
       {canEdit && expanded && (
         <div style={{ borderTop: `1px solid ${BDR}`, paddingTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
           <div>
@@ -722,7 +695,6 @@ function RepCard({ rep, values, onUpdate, onRemove, canEdit }) {
           ))}
         </div>
       )}
-
       {canEdit && (
         <div style={{ display: "flex", gap: 8, borderTop: `1px solid ${BDR}`, paddingTop: 12 }}>
           <button onClick={() => setExpanded(e => !e)}
@@ -777,7 +749,7 @@ export default function App() {
   const [versions, setVersions] = useState(() => loadState("icqa_versions", Object.fromEntries(INIT_TURNOS.map(t => [t, CURRENT_VERSION]))));
   const [editors, setEditors]   = useState(() => loadState("icqa_editors", {}));
   const [currentUser, setCurrentUser] = useState(() => loadState("icqa_user", null));
-  const [activeTab, setActiveTab]     = useState(turnos[0]);
+  const [activeTab, setActiveTab]     = useState(() => loadState("icqa_turnos", INIT_TURNOS)[0]);
   const [showAdd, setShowAdd]         = useState(false);
   const [showImport, setShowImport]   = useState(false);
   const [showManage, setShowManage]   = useState(false);
@@ -859,7 +831,7 @@ export default function App() {
   return (
     <div style={{ background: BG, minHeight: "100vh", paddingBottom: 48, fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
 
-      {/* ── HEADER ── */}
+      {/* HEADER */}
       <div style={{ borderBottom: `1px solid ${BDR}`, padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ padding: "18px 0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -870,12 +842,10 @@ export default function App() {
           </div>
           <div style={{ fontSize: 13, color: TXM, marginTop: 2, marginLeft: 38 }}>Acompanhe o desempenho por turno e tarefa</div>
         </div>
-
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {isCreator && (
             <button onClick={() => setShowAdmin(true)}
-              title="Painel de administração"
-              style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid #20103A`, background: "#20103A", color: "#A47CF0", cursor: "pointer", fontSize: 12, fontWeight: 500 }}>
+              style={{ padding: "7px 14px", borderRadius: 8, border: "1px solid #20103A", background: "#20103A", color: "#A47CF0", cursor: "pointer", fontSize: 12, fontWeight: 500 }}>
               ⚙ Admin
             </button>
           )}
@@ -883,7 +853,6 @@ export default function App() {
             style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${Y}`, background: "transparent", color: Y, cursor: "pointer", fontSize: 13, fontWeight: 500 }}>
             ↑ Importar planilha
           </button>
-
           {currentUser ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ textAlign: "right" }}>
@@ -892,8 +861,7 @@ export default function App() {
                   {isCreator ? "Criadora" : canEditTab ? `Editor — ${activeTab}` : "Visualizador"}
                 </div>
               </div>
-              <button onClick={() => setCurrentUser(null)}
-                title="Sair"
+              <button onClick={() => setCurrentUser(null)} title="Sair"
                 style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${BDR}`, background: "none", cursor: "pointer", fontSize: 13, color: TXM }}>
                 ↩
               </button>
@@ -908,7 +876,7 @@ export default function App() {
       </div>
 
       <div style={{ padding: "0 24px" }}>
-        {/* ── TABS ── */}
+        {/* TABS */}
         <div style={{ display: "flex", alignItems: "center", borderBottom: `1px solid ${BDR}`, marginTop: 8, marginBottom: 20 }}>
           <div style={{ display: "flex", flex: 1, overflowX: "auto" }}>
             {turnos.map(t => (
@@ -941,7 +909,6 @@ export default function App() {
               </button>
             ))}
           </div>
-
           {isCreator && (
             <button onClick={() => setShowManage(true)} title="Gerenciar turnos"
               style={{
@@ -1008,10 +975,9 @@ export default function App() {
         )}
       </div>
 
-      {/* ── BOTTOM BAR ── */}
+      {/* BOTTOM BAR */}
       <div style={{
-        position: "fixed", bottom: 0, left: 0, right: 0,
-        height: 36,
+        position: "fixed", bottom: 0, left: 0, right: 0, height: 36,
         background: SUR, borderTop: `1px solid ${BDR}`,
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 20px", zIndex: 100,
@@ -1027,20 +993,13 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── MODALS ── */}
+      {/* MODALS */}
       {showLogin && <LoginModal onLogin={setCurrentUser} onClose={() => setShowLogin(false)} />}
-
       {showAdmin && isCreator && (
-        <AdminModal
-          turnos={turnos}
-          versions={versions}
-          editors={editors}
-          onSetVersion={handleSetVersion}
-          onSetEditors={handleSetEditors}
-          onClose={() => setShowAdmin(false)}
-        />
+        <AdminModal turnos={turnos} versions={versions} editors={editors}
+          onSetVersion={handleSetVersion} onSetEditors={handleSetEditors}
+          onClose={() => setShowAdmin(false)} />
       )}
-
       {showAdd && canEditTab && (
         <AddRepModal turno={activeTab} onAdd={(name, admissao) => handleAdd(name, activeTab, admissao)} onClose={() => setShowAdd(false)} />
       )}
@@ -1048,13 +1007,7 @@ export default function App() {
         <ImportModal turno={activeTab} onImport={handleImport} onClose={() => setShowImport(false)} />
       )}
       {showManage && isCreator && (
-        <ManageTurnosModal
-          turnos={turnos}
-          onRename={handleRenameTurno}
-          onAdd={handleAddTurno}
-          onRemove={handleRemoveTurno}
-          onClose={() => setShowManage(false)}
-        />
+        <ManageTurnosModal turnos={turnos} onRename={handleRenameTurno} onAdd={handleAddTurno} onRemove={handleRemoveTurno} onClose={() => setShowManage(false)} />
       )}
     </div>
   );
