@@ -16,6 +16,7 @@ const CREATOR_PASS = "Mel@ICQA07";
 const SECOES = ["Desenvolvimento", "Fichas PS", "Treinamentos", "QA"];
 const SECAO_ICONS = { "Desenvolvimento":"⚡","Fichas PS":"👥","Treinamentos":"📋","QA":"🔍" };
 
+/* Performance sections use IC/QA pills; others have their own layout */
 const SECAO_TIPO = {
   "Desenvolvimento": "performance",
   "Fichas PS":       "fichas",
@@ -41,18 +42,19 @@ const TASK_DIM = {
   "PDD":"#3A0D1A","PD":"#20103A","CUBING":"#003A1E","VENCIDO":"#3A1A00",
 };
 
+/* ── helpers ── */
 function avg(vals) {
-  if(!vals.length) return 0;
+  if (!vals.length) return 0;
   return Math.round(vals.reduce((s,v)=>s+v,0)/vals.length);
 }
-function repAvg(rep,tipo) {
-  return avg(TAREFAS[tipo].map(t=>rep[t]??0));
+function repAvg(rep, tipo) {
+  return avg(TAREFAS[tipo].map(t => rep[t] ?? 0));
 }
-function loadState(key,fb) {
-  try{const r=localStorage.getItem(key);return r?JSON.parse(r):fb;}catch{return fb;}
+function loadState(key, fb) {
+  try { const r=localStorage.getItem(key); return r?JSON.parse(r):fb; } catch { return fb; }
 }
 function saveState(key,val) {
-  try{localStorage.setItem(key,JSON.stringify(val));}catch{}
+  try { localStorage.setItem(key,JSON.stringify(val)); } catch {}
 }
 function makeEmptySecoes() {
   const o={};
@@ -64,6 +66,7 @@ function makeEmptySecoes() {
   return o;
 }
 
+/* Convert Supabase tracker row → Desenvolvimento section */
 function fromTracker(raw) {
   const out={IC:{},QA:{}};
   Object.entries(raw?.IC||{}).forEach(([n,v])=>{
@@ -90,9 +93,14 @@ function fromTracker(raw) {
   return out;
 }
 
+/* Convert app perf section → Supabase tracker format */
+function toTracker(secData) {
+  return { IC: secData.IC||{}, QA: secData.QA||{} };
+}
+
 function tempoDeCasa(adm) {
   if(!adm) return null;
-  const d=new Date(adm+"T00:00:00"),h=new Date();
+  const d=new Date(adm+"T00:00:00"), h=new Date();
   const m=(h.getFullYear()-d.getFullYear())*12+(h.getMonth()-d.getMonth());
   if(m<0) return null;
   if(m===0) return "< 1 mês";
@@ -101,6 +109,7 @@ function tempoDeCasa(adm) {
   return r>0?`${a} ano${a>1?"s":""} e ${r} mês${r>1?"es":""}`:`${a} ano${a>1?"s":""}`;
 }
 
+/* ── MODAL BASE ── */
 function ModalWrap({children,onClose,width=460}){
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999,padding:16}}
@@ -112,6 +121,7 @@ function ModalWrap({children,onClose,width=460}){
   );
 }
 
+/* ── LOGIN ── */
 function LoginModal({onLogin,onClose}){
   const [name,setName]=useState("");
   const [pass,setPass]=useState("");
@@ -156,6 +166,7 @@ function LoginModal({onLogin,onClose}){
   );
 }
 
+/* ── ADMIN MODAL ── */
 function AdminModal({versoes,editors,onSetEditors,onAddVersao,onRemoveVersao,onClose}){
   const [tab,setTab]=useState("editors");
   const [selVer,setSelVer]=useState(versoes[0]||"");
@@ -172,7 +183,7 @@ function AdminModal({versoes,editors,onSetEditors,onAddVersao,onRemoveVersao,onC
           <div style={{fontSize:16,fontWeight:500,color:TXT}}>Painel da Criadora</div>
           <div style={{fontSize:12,color:TXM,marginTop:2}}>Gerencie versões e editores</div>
         </div>
-        <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:TXM}}>&times;</button>
+        <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:TXM}}>×</button>
       </div>
       <div style={{display:"flex",borderBottom:`1px solid ${BDR}`,marginBottom:18}}>
         {["editors","versoes"].map(t=>(
@@ -255,6 +266,7 @@ function AdminModal({versoes,editors,onSetEditors,onAddVersao,onRemoveVersao,onC
   );
 }
 
+/* ── ADD REP MODAL ── */
 function AddRepModal({versao,secao,tipo,onAdd,onClose}){
   const [name,setName]=useState("");
   const [re,setRe]=useState("");
@@ -276,7 +288,7 @@ function AddRepModal({versao,secao,tipo,onAdd,onClose}){
           <label style={{fontSize:12,color:TXM,display:"block",marginBottom:4}}>Escala</label>
           <select value={escala} onChange={e=>setEscala(e.target.value)}
             style={{width:"100%",background:SUR,border:`1px solid ${BDR}`,color:TXT,borderRadius:8,padding:"8px 12px",fontSize:13}}>
-            <option value="">&mdash;</option>
+            <option value="">—</option>
             {["A","B","C","D"].map(x=><option key={x} value={x}>{x}</option>)}
           </select>
         </div>
@@ -295,6 +307,7 @@ function AddRepModal({versao,secao,tipo,onAdd,onClose}){
   );
 }
 
+/* ── IMPORT CSV MODAL ── */
 function ImportModal({versao,secao,tipo,onImport,onClose}){
   const [step,setStep]=useState("upload");
   const [headers,setHeaders]=useState([]);
@@ -321,7 +334,7 @@ function ImportModal({versao,secao,tipo,onImport,onClose}){
       const name=row[headers.indexOf(map.rep)]?.trim();
       if(!name)return;
       const vals={};
-      TAREFAS[tipo].forEach(t=>{const raw=map[t]?row[headers.indexOf(map[t])]:"%;const n=parseFloat(raw);vals[t]=isNaN(n)?0:Math.min(100,Math.max(0,Math.round(n)));});
+      TAREFAS[tipo].forEach(t=>{const raw=map[t]?row[headers.indexOf(map[t])]:"";const n=parseFloat(raw);vals[t]=isNaN(n)?0:Math.min(100,Math.max(0,Math.round(n)));});
       result.push({name,vals});
     });
     if(!result.length){setErr("Nenhum dado.");return;}
@@ -334,7 +347,7 @@ function ImportModal({versao,secao,tipo,onImport,onClose}){
           <div style={{fontSize:15,fontWeight:500,color:TXT}}>Importar CSV · {versao}/{secao}/{tipo}</div>
           <div style={{fontSize:12,color:TXM}}>Importe reps de um arquivo .csv</div>
         </div>
-        <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:TXM}}>&times;</button>
+        <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:TXM}}>×</button>
       </div>
       {err&&<div style={{background:"#3A0D1A",color:"#E05C7A",borderRadius:8,padding:"10px 14px",fontSize:13,marginBottom:14}}>{err}</div>}
       {step==="upload"&&(
@@ -356,7 +369,7 @@ function ImportModal({versao,secao,tipo,onImport,onClose}){
               <span style={{fontSize:13,color:Y,fontWeight:500,width:110,flexShrink:0}}>Nome *</span>
               <select value={map.rep} onChange={e=>setMap(m=>({...m,rep:e.target.value}))}
                 style={{flex:1,background:SUR2,border:`1px solid ${BDR}`,color:TXT,borderRadius:6,padding:"6px 10px",fontSize:13}}>
-                <option value="">&mdash; selecionar &mdash;</option>
+                <option value="">— selecionar —</option>
                 {headers.map(h=><option key={h} value={h}>{h}</option>)}
               </select>
             </div>
@@ -366,7 +379,7 @@ function ImportModal({versao,secao,tipo,onImport,onClose}){
                 <span style={{fontSize:13,color:TXT,width:110,flexShrink:0}}>{t}</span>
                 <select value={map[t]} onChange={e=>setMap(m=>({...m,[t]:e.target.value}))}
                   style={{flex:1,background:SUR2,border:`1px solid ${BDR}`,color:TXT,borderRadius:6,padding:"6px 10px",fontSize:13}}>
-                  <option value="">&mdash; ignorar &mdash;</option>
+                  <option value="">— ignorar —</option>
                   {headers.map(h=><option key={h} value={h}>{h}</option>)}
                 </select>
               </div>
@@ -404,6 +417,7 @@ function ImportModal({versao,secao,tipo,onImport,onClose}){
   );
 }
 
+/* ── RadialProgress ── */
 function RadialProgress({pct,color=Y,size=48}){
   const r=size/2-5,circ=2*Math.PI*r,dash=(pct/100)*circ;
   return(
@@ -425,14 +439,20 @@ function StatusBadge({pct}){
   return <span style={{fontSize:11,background:"#1A1A3A",color:"#7A9CF0",borderRadius:20,padding:"2px 8px",fontWeight:500}}>Aprendendo</span>;
 }
 
+/* ── REP CARD (performance) ── */
 function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
   const [expanded,setExpanded]=useState(false);
   const a=repAvg(values,tipo);
   const tarefas=TAREFAS[tipo];
   const initials=rep.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
   const hue=(rep.charCodeAt(0)*37+(rep.charCodeAt(rep.length-1)||0)*17)%360;
+
   function liveUpdate(field,val){onUpdate(rep,{...values,[field]:val});}
-  const ferias=values.feriasIni&&values.feriasFim?`${values.feriasIni} → ${values.feriasFim} (${values.feriasDias||0}d)`:null;
+
+  const ferias = values.feriasIni && values.feriasFim
+    ? `${values.feriasIni} → ${values.feriasFim} (${values.feriasDias||0}d)`
+    : null;
+
   return(
     <div style={{background:SUR,border:`1px solid ${expanded?Y+"55":BDR}`,borderRadius:16,padding:18,display:"flex",flexDirection:"column",gap:12,transition:"border-color 0.2s"}}>
       <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -444,12 +464,13 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
             {values.cargo&&<span style={{fontSize:10,background:SUR2,color:TXM,borderRadius:4,padding:"1px 5px"}}>{values.cargo}</span>}
             {values.escala&&<span style={{fontSize:10,background:"#1A2000",color:"#8ED64A",borderRadius:4,padding:"1px 5px"}}>Esc {values.escala}</span>}
           </div>
-          {tempoDeCasa(values.admissao)&&<div style={{fontSize:10,color:TXM}}>{tempoDeCasa(values.admissao)} de casa</div>}
+          {tempoDeCasa(values.admissao)&&<div style={{fontSize:10,color:TXM}}>🕐 {tempoDeCasa(values.admissao)}</div>}
           {ferias&&<div style={{fontSize:10,color:"#3EC9C4",marginTop:2}}>🏖 Férias: {ferias}</div>}
           <StatusBadge pct={a}/>
         </div>
         <RadialProgress pct={a} color={Y} size={46}/>
       </div>
+
       <div style={{display:"flex",flexDirection:"column",gap:5}}>
         {tarefas.map(t=>{
           const v=values[t]??0;
@@ -465,6 +486,7 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
           );
         })}
       </div>
+
       {canEdit&&expanded&&(
         <div style={{borderTop:`1px solid ${BDR}`,paddingTop:12,display:"flex",flexDirection:"column",gap:10}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
@@ -506,7 +528,7 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
                 <div style={{width:8,height:8,borderRadius:2,background:TASK_COLORS[t],flexShrink:0}}/>
                 <span style={{fontSize:12,color:TXT,width:100,flexShrink:0}}>{t}</span>
                 <button onClick={()=>liveUpdate(t,Math.max(0,(values[t]??0)-25))}
-                  style={{width:26,height:26,borderRadius:6,border:`1px solid ${BDR}`,background:SUR2,color:TXM,cursor:"pointer",fontSize:15,lineHeight:1,flexShrink:0}}>&minus;</button>
+                  style={{width:26,height:26,borderRadius:6,border:`1px solid ${BDR}`,background:SUR2,color:TXM,cursor:"pointer",fontSize:15,lineHeight:1,flexShrink:0}}>−</button>
                 <input type="range" min={0} max={100} step={25} value={values[t]??0} onChange={e=>liveUpdate(t,Number(e.target.value))}
                   style={{flex:1,accentColor:Y}}/>
                 <button onClick={()=>liveUpdate(t,Math.min(100,(values[t]??0)+25))}
@@ -517,6 +539,7 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
           </div>
         </div>
       )}
+
       {canEdit&&(
         <div style={{display:"flex",gap:8,borderTop:`1px solid ${BDR}`,paddingTop:10}}>
           <button onClick={()=>setExpanded(e=>!e)}
@@ -531,6 +554,7 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
   );
 }
 
+/* ── FICHA CARD (Fichas PS) ── */
 function FichaCard({item,canEdit,onRemove}){
   const [expanded,setExpanded]=useState(false);
   const hue=(item.name.charCodeAt(0)*37+(item.name.charCodeAt(item.name.length-1)||0)*17)%360;
@@ -547,7 +571,7 @@ function FichaCard({item,canEdit,onRemove}){
             {item.area&&<span style={{fontSize:10,background:SUR2,color:TXM,borderRadius:4,padding:"1px 5px"}}>{item.area}</span>}
             {item.escala&&<span style={{fontSize:10,background:"#1A2000",color:"#8ED64A",borderRadius:4,padding:"1px 5px"}}>Esc {item.escala}</span>}
           </div>
-          {tempoDeCasa(item.admissao)&&<div style={{fontSize:10,color:TXM,marginTop:2}}>{tempoDeCasa(item.admissao)} de casa</div>}
+          {tempoDeCasa(item.admissao)&&<div style={{fontSize:10,color:TXM,marginTop:2}}>🕐 {tempoDeCasa(item.admissao)}</div>}
           {ferias&&<div style={{fontSize:10,color:"#3EC9C4",marginTop:2}}>🏖 Férias: {ferias}</div>}
         </div>
       </div>
@@ -573,6 +597,7 @@ function FichaCard({item,canEdit,onRemove}){
   );
 }
 
+/* ── TREINAMENTO CARD ── */
 function TrCard({person,canEdit,onToggle}){
   const [expanded,setExpanded]=useState(false);
   const trainings=person.trainings||[];
@@ -588,10 +613,10 @@ function TrCard({person,canEdit,onToggle}){
           <div style={{fontSize:13,fontWeight:500,color:TXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{person.name}</div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:3}}>
             {person.role&&<span style={{fontSize:10,background:SUR2,color:TXM,borderRadius:4,padding:"1px 5px"}}>{person.role}</span>}
-            {tempoDeCasa(person.admission)&&<span style={{fontSize:10,color:TXM}}>{tempoDeCasa(person.admission)} de casa</span>}
+            {tempoDeCasa(person.admission)&&<span style={{fontSize:10,color:TXM}}>🕐 {tempoDeCasa(person.admission)}</span>}
           </div>
           <div style={{marginTop:4}}>
-            <div style={{height:4,background:"#003A1E",borderRadius:10,overflow:"hidden",width:"100%"}}>
+            <div style={{height:4,background:TASK_DIM["CONTAGEM"],borderRadius:10,overflow:"hidden",width:"100%"}}>
               <div style={{height:"100%",width:`${pct}%`,background:"#3EC97A",borderRadius:10,transition:"width 0.3s"}}/>
             </div>
             <span style={{fontSize:10,color:"#3EC97A",marginTop:2,display:"block"}}>{done}/{trainings.length} treinamentos · {pct}%</span>
@@ -621,6 +646,7 @@ function TrCard({person,canEdit,onToggle}){
   );
 }
 
+/* ── SUMMARY BAR (performance) ── */
 function SummaryBar({repsData,tipo}){
   const tarefas=TAREFAS[tipo];
   const all=Object.values(repsData);
@@ -645,6 +671,7 @@ function SummaryBar({repsData,tipo}){
   );
 }
 
+/* ── APP ── */
 export default function App(){
   const [versoes,setVersoes]=useState(()=>loadState("icqa2_versoes",["T1","T2"]));
   const [data,setData]=useState(()=>loadState("icqa2_data",null)||{T1:makeEmptySecoes(),T2:makeEmptySecoes()});
@@ -665,6 +692,7 @@ export default function App(){
   const [showAdd,setShowAdd]=useState(false);
   const [showImport,setShowImport]=useState(false);
 
+  /* Load from Supabase on mount */
   useEffect(()=>{
     async function load(){
       try{
@@ -681,7 +709,7 @@ export default function App(){
           return{...d,T2:t2};
         });
       }catch(e){
-        setSbErr("Falha ao carregar Supabase.");
+        setSbErr("Falha ao carregar dados do Supabase.");
       }finally{
         setSbLoading(false);
       }
@@ -689,6 +717,7 @@ export default function App(){
     load();
   },[]);
 
+  /* Persist to localStorage */
   useEffect(()=>{saveState("icqa2_versoes",versoes);},[versoes]);
   useEffect(()=>{saveState("icqa2_data",data);},[data]);
   useEffect(()=>{saveState("icqa2_editors",editors);},[editors]);
@@ -696,21 +725,25 @@ export default function App(){
 
   const isCreator=currentUser?.isCreator===true;
   const canEdit=isCreator||(currentUser&&(editors[activeVer]||[]).includes(currentUser.name));
+
   const secTipo=SECAO_TIPO[activeSec];
   const secData=data?.[activeVer]?.[activeSec]||{};
-  const repsData=secTipo==="performance"?(secData[activeTipo]||{}):
-{};
+  const repsData=secTipo==="performance"?(secData[activeTipo]||{}):{};
   const repList=Object.keys(repsData).filter(r=>r.toLowerCase().includes(search.toLowerCase()));
 
-  const saveTrackerToSb=useCallback(async(newSecData)=>{
+  /* Save Desenvolvimento to Supabase */
+  const saveTrackerToSb=useCallback(async(newData)=>{
     if(activeVer!=="T2") return;
     try{
-      const payload={...newSecData,tarefasStd:TAREFAS.IC,tarefasQA:TAREFAS.QA,
-        tarefasPorTurno:{IC:TAREFAS.IC,QA:TAREFAS.QA},turnos:["IC","QA"],qaSheets:["QA"],updated_at:Date.now()};
+      const payload={IC:newData["IC"]||{},QA:newData["QA"]||{},
+        tarefasStd:TAREFAS.IC,tarefasQA:TAREFAS.QA,
+        tarefasPorTurno:{IC:TAREFAS.IC,QA:TAREFAS.QA},
+        turnos:["IC","QA"],qaSheets:["QA"],updated_at:Date.now()};
       await sb.from("tracker").update({data:payload}).eq("id","main");
     }catch{}
   },[activeVer]);
 
+  /* counts */
   function countTipo(ver,sec,tipo){return Object.keys(data?.[ver]?.[sec]?.[tipo]||{}).length;}
   function countSec(ver,sec){
     const sd=data?.[ver]?.[sec]||{};
@@ -721,6 +754,7 @@ export default function App(){
     return 0;
   }
 
+  /* mutations */
   const handleUpdate=useCallback((ver,sec,tipo,rep,vals)=>{
     setData(d=>{
       const updated={...d,[ver]:{...d[ver],[sec]:{...d[ver][sec],[tipo]:{...d[ver][sec][tipo],[rep]:vals}}}};
@@ -732,7 +766,7 @@ export default function App(){
   const handleRemove=useCallback((ver,sec,tipo,rep)=>{
     setData(d=>{
       const u={...d[ver][sec][tipo]};delete u[rep];
-      const updated={...d,[ver]:{...d[ver],[sec]:{...d[ver][sec],[tipo]:u}}}};
+      const updated={...d,[ver]:{...d[ver],[sec]:{...d[ver][sec],[tipo]:u}}};
       if(ver==="T2"&&sec==="Desenvolvimento") saveTrackerToSb(updated["T2"]["Desenvolvimento"]);
       return updated;
     });
@@ -751,9 +785,12 @@ export default function App(){
 
   const handleImport=useCallback((ver,sec,tipo,records)=>{
     setData(d=>{
-      const u2={...(d?.[ver]?.[sec]?.[tipo]||{})};
-      records.forEach(({name,vals})=>{u2[name]={re:"",cpf:"",ldap:"",cargo:"",escala:"",admissao:"",contEmer:"",endereco:"",telefone:"",feriasFim:"",feriasIni:"",feriasDias:0,...vals};});
-      const updated={...d,[ver]:{...d[ver],[sec]:{...d[ver][sec],[tipo]:u2}}};
+      const updated2={...(d?.[ver]?.[sec]?.[tipo]||{})};
+      records.forEach(({name,vals})=>{
+        const base={re:"",cpf:"",ldap:"",cargo:"",escala:"",admissao:"",contEmer:"",endereco:"",telefone:"",feriasFim:"",feriasIni:"",feriasDias:0};
+        updated2[name]={...base,...vals};
+      });
+      const updated={...d,[ver]:{...d[ver],[sec]:{...d[ver][sec],[tipo]:updated2}}};
       if(ver==="T2"&&sec==="Desenvolvimento") saveTrackerToSb(updated["T2"]["Desenvolvimento"]);
       return updated;
     });
@@ -774,6 +811,7 @@ export default function App(){
 
   const handleSetEditors=useCallback((ver,list)=>{setEditors(e=>({...e,[ver]:list}));},[]);
 
+  /* Treinamentos toggle */
   const handleTrToggle=useCallback((personId,trainId,done)=>{
     setData(d=>{
       const trData={...d[activeVer]["Treinamentos"].data};
@@ -784,6 +822,7 @@ export default function App(){
     });
   },[activeVer]);
 
+  /* Fichas remove */
   const handleFichaRemove=useCallback((id)=>{
     setData(d=>{
       const list=(d[activeVer]["Fichas PS"].list||[]).filter(x=>x.id!==id);
@@ -803,6 +842,7 @@ export default function App(){
   return(
     <div style={{background:BG,minHeight:"100vh",paddingBottom:44,fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
 
+      {/* HEADER */}
       <div style={{borderBottom:`1px solid ${BDR}`,padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{padding:"16px 0"}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -840,6 +880,7 @@ export default function App(){
         </div>
       </div>
 
+      {/* TURNOS */}
       <div style={{borderBottom:`1px solid ${BDR}`,padding:"0 24px",display:"flex",alignItems:"center",background:"#111"}}>
         <div style={{fontSize:11,color:TXM,marginRight:14,letterSpacing:"0.5px",textTransform:"uppercase",flexShrink:0}}>Turno</div>
         <div style={{display:"flex",flex:1,overflowX:"auto"}}>
@@ -857,6 +898,7 @@ export default function App(){
         </div>
       </div>
 
+      {/* SEÇÕES */}
       <div style={{borderBottom:`1px solid ${BDR}`,padding:"0 24px",display:"flex",overflowX:"auto"}}>
         {SECOES.map(s=>(
           <button key={s} onClick={()=>{setActiveSec(s);setSearch("");}}
@@ -872,6 +914,7 @@ export default function App(){
 
       <div style={{padding:"16px 24px 0"}}>
 
+        {/* IC/QA PILLS — only for performance sections */}
         {secTipo==="performance"&&(
           <div style={{display:"flex",gap:6,marginBottom:16}}>
             {REP_TIPOS.map(t=>(
@@ -879,12 +922,14 @@ export default function App(){
                 style={{padding:"6px 18px",borderRadius:20,cursor:"pointer",fontSize:13,fontWeight:500,
                   border:activeTipo===t?`1px solid ${Y}`:`1px solid ${BDR}`,
                   background:activeTipo===t?"#1A1400":"none",color:activeTipo===t?Y:TXM,transition:"all 0.2s"}}>
-                {t}<span style={{marginLeft:6,fontSize:11,opacity:0.8}}>{countTipo(activeVer,activeSec,t)}</span>
+                {t}
+                <span style={{marginLeft:6,fontSize:11,opacity:0.8}}>{countTipo(activeVer,activeSec,t)}</span>
               </button>
             ))}
           </div>
         )}
 
+        {/* SEARCH + ACTIONS */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,gap:12}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <input type="text" placeholder="Buscar..." value={search} onChange={e=>setSearch(e.target.value)}
@@ -913,6 +958,7 @@ export default function App(){
           )}
         </div>
 
+        {/* ── PERFORMANCE SECTION ── */}
         {secTipo==="performance"&&(
           <>
             <SummaryBar repsData={repsData} tipo={activeTipo}/>
@@ -933,6 +979,7 @@ export default function App(){
           </>
         )}
 
+        {/* ── FICHAS PS SECTION ── */}
         {secTipo==="fichas"&&(
           <>
             <div style={{background:SUR,border:`1px solid ${BDR}`,borderRadius:12,padding:"12px 18px",marginBottom:18,display:"flex",alignItems:"center",gap:12}}>
@@ -953,6 +1000,7 @@ export default function App(){
           </>
         )}
 
+        {/* ── TREINAMENTOS SECTION ── */}
         {secTipo==="treinamentos"&&(
           <>
             <div style={{background:SUR,border:`1px solid ${BDR}`,borderRadius:12,padding:"12px 18px",marginBottom:18,display:"flex",alignItems:"center",gap:12}}>
@@ -975,11 +1023,12 @@ export default function App(){
 
       </div>
 
+      {/* BOTTOM BAR */}
       <div style={{position:"fixed",bottom:0,left:0,right:0,height:36,background:SUR,borderTop:`1px solid ${BDR}`,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 20px",zIndex:100}}>
         <div style={{fontSize:11,color:TXM,display:"flex",alignItems:"center",gap:6}}>
           <span style={{color:Y,fontWeight:600,letterSpacing:"0.5px"}}>{activeVer}</span>
           <span>·</span><span>{activeSec}</span>
-          {secTipo==="performance"&&<><span>·</span><span>{activeTipo}</span></>;}
+          {secTipo==="performance"&&<><span>·</span><span>{activeTipo}</span></>}
           {canEdit&&<span style={{color:"#3EC97A",marginLeft:4}}>✓ editando</span>}
         </div>
         <div style={{fontSize:10,color:"#555",fontStyle:"italic",letterSpacing:"0.3px"}}>
@@ -987,6 +1036,7 @@ export default function App(){
         </div>
       </div>
 
+      {/* MODALS */}
       {showLogin&&<LoginModal onLogin={setCurrentUser} onClose={()=>setShowLogin(false)}/>}
       {showAdmin&&isCreator&&(
         <AdminModal versoes={versoes} editors={editors}
