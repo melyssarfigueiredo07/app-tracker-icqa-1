@@ -546,13 +546,47 @@ function TurnoSummary({ turnoData }) {
 
 /* ── APP ── */
 export default function App() {
-  const [turnos, setTurnos] = useState(INIT_TURNOS);
-  const [data, setData]     = useState(initialData);
+  const [loaded, setLoaded]   = useState(false);
+  const [turnos, setTurnos]   = useState(INIT_TURNOS);
+  const [data, setData]       = useState({});
   const [activeTab, setActiveTab]       = useState(INIT_TURNOS[0]);
   const [showAdd, setShowAdd]           = useState(false);
   const [showImport, setShowImport]     = useState(false);
   const [showManage, setShowManage]     = useState(false);
   const [search, setSearch]             = useState("");
+
+  /* ── load from Grid state on mount ── */
+  useEffect(() => {
+    async function loadState() {
+      try {
+        if (window.GRID?.state?.get) {
+          const { state } = await window.GRID.state.get();
+          if (state?.turnos?.length && state?.data) {
+            setTurnos(state.turnos);
+            setData(state.data);
+            setActiveTab(state.turnos[0]);
+          } else {
+            const initData = initialData();
+            setData(initData);
+            await window.GRID.state.patch({ turnos: INIT_TURNOS, data: initData });
+          }
+        } else {
+          setData(initialData());
+        }
+      } catch {
+        setData(initialData());
+      }
+      setLoaded(true);
+    }
+    loadState();
+  }, []);
+
+  /* ── persist to Grid state on every change ── */
+  useEffect(() => {
+    if (!loaded) return;
+    if (!window.GRID?.state?.patch) return;
+    window.GRID.state.patch({ turnos, data });
+  }, [turnos, data, loaded]);
 
   const turnoData = data[activeTab] || {};
   const repList = Object.keys(turnoData).filter(r => r.toLowerCase().includes(search.toLowerCase()));
@@ -607,6 +641,17 @@ export default function App() {
       return { ...d, [activeTab]: updated };
     });
   }, [activeTab]);
+
+  if (!loaded) return (
+    <div style={{ background: BG, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ width: 28, height: 28, background: Y, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#000" }}>IQ</span>
+        </div>
+        <div style={{ fontSize: 14, color: TXM }}>Carregando...</div>
+      </div>
+    </div>
+  );
 
   return (
     <div style={{ background: BG, minHeight: "100vh", padding: "0 0 60px", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
