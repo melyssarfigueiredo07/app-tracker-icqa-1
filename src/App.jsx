@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 /* ── palette ── */
 const Y    = "#F5C518";
@@ -8,6 +8,10 @@ const SUR2 = "#242424";
 const BDR  = "#2E2E2E";
 const TXT  = "#F0F0F0";
 const TXM  = "#A0A0A0";
+
+const CREATOR_NAME = "Melyssa Rangel de Figueiredo";
+const CREATOR_PASS = "MRF@ICQA2025";
+const CURRENT_VERSION = "T2";
 
 const INIT_TURNOS = ["Turno 1", "Turno 2", "Turno 3"];
 const TAREFAS = ["Contagem", "Inbound Audit", "Stock Audit", "Lost", "Transfer", "Lost/Sobra"];
@@ -29,9 +33,7 @@ const TASK_DIM = {
   "Lost/Sobra":    "#003A1E",
 };
 
-function makeEmptyTurno() {
-  return {};
-}
+function makeEmptyTurno() { return {}; }
 
 function initialData() {
   const data = {};
@@ -52,6 +54,17 @@ function initialData() {
 function avg(vals) {
   if (!vals.length) return 0;
   return Math.round(vals.reduce((s, v) => s + v, 0) / vals.length);
+}
+
+function loadState(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch { return fallback; }
+}
+
+function saveState(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
 }
 
 /* ── RadialProgress ── */
@@ -104,7 +117,249 @@ function ModalWrap({ children, onClose, width = 460 }) {
   );
 }
 
-/* ── EDIT REP MODAL — kept for inline use via RepCard ── */
+/* ── LOGIN MODAL ── */
+function LoginModal({ onLogin, onClose }) {
+  const [name, setName]       = useState("");
+  const [pass, setPass]       = useState("");
+  const [mode, setMode]       = useState("user"); // "user" | "creator"
+  const [error, setError]     = useState("");
+
+  function handleUserLogin() {
+    const n = name.trim();
+    if (!n) { setError("Digite seu nome."); return; }
+    onLogin({ name: n, isCreator: false });
+    onClose();
+  }
+
+  function handleCreatorLogin() {
+    if (pass !== CREATOR_PASS) { setError("Senha incorreta."); return; }
+    onLogin({ name: CREATOR_NAME, isCreator: true });
+    onClose();
+  }
+
+  return (
+    <ModalWrap onClose={onClose} width={380}>
+      <div style={{ fontSize: 16, fontWeight: 500, color: TXT, marginBottom: 6 }}>Identificação</div>
+      <div style={{ fontSize: 13, color: TXM, marginBottom: 20 }}>Entre para registrar sua sessão e ter acesso de edição.</div>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        {["user","creator"].map(m => (
+          <button key={m} onClick={() => { setMode(m); setError(""); }}
+            style={{
+              flex: 1, padding: "8px 0", borderRadius: 8, cursor: "pointer", fontSize: 13,
+              border: mode === m ? `1px solid ${Y}` : `1px solid ${BDR}`,
+              background: mode === m ? "#1A1400" : "none",
+              color: mode === m ? Y : TXM, fontWeight: mode === m ? 500 : 400,
+            }}>
+            {m === "user" ? "Colaborador" : "Criadora"}
+          </button>
+        ))}
+      </div>
+
+      {error && <div style={{ background: "#3A0D1A", color: "#E05C7A", borderRadius: 8, padding: "9px 13px", fontSize: 13, marginBottom: 14 }}>{error}</div>}
+
+      {mode === "user" ? (
+        <>
+          <label style={{ fontSize: 12, color: TXM, display: "block", marginBottom: 5 }}>Seu nome</label>
+          <input type="text" placeholder="Ex: João Silva" value={name}
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") handleUserLogin(); }}
+            style={{ width: "100%", boxSizing: "border-box", marginBottom: 18, background: SUR, border: `1px solid ${BDR}`, color: TXT, borderRadius: 8, padding: "9px 12px", fontSize: 14, outline: "none" }}
+            autoFocus />
+          <button onClick={handleUserLogin}
+            style={{ width: "100%", padding: "10px 0", borderRadius: 8, border: "none", background: Y, color: "#000", cursor: "pointer", fontSize: 14, fontWeight: 500 }}>
+            Entrar
+          </button>
+        </>
+      ) : (
+        <>
+          <div style={{ fontSize: 13, color: TXM, marginBottom: 10 }}>
+            Acesso exclusivo de <span style={{ color: Y }}>{CREATOR_NAME}</span>
+          </div>
+          <label style={{ fontSize: 12, color: TXM, display: "block", marginBottom: 5 }}>Senha</label>
+          <input type="password" placeholder="Senha da criadora" value={pass}
+            onChange={e => setPass(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") handleCreatorLogin(); }}
+            style={{ width: "100%", boxSizing: "border-box", marginBottom: 18, background: SUR, border: `1px solid ${BDR}`, color: TXT, borderRadius: 8, padding: "9px 12px", fontSize: 14, outline: "none" }}
+            autoFocus />
+          <button onClick={handleCreatorLogin}
+            style={{ width: "100%", padding: "10px 0", borderRadius: 8, border: "none", background: Y, color: "#000", cursor: "pointer", fontSize: 14, fontWeight: 500 }}>
+            Entrar como Criadora
+          </button>
+        </>
+      )}
+    </ModalWrap>
+  );
+}
+
+/* ── ADMIN PANEL MODAL (creator only) ── */
+function AdminModal({ turnos, versions, editors, onSetVersion, onSetEditors, onClose }) {
+  const [activeSection, setActiveSection] = useState("editors");
+  const [selectedTurno, setSelectedTurno] = useState(turnos[0] || "");
+  const [newEditor, setNewEditor] = useState("");
+  const [newVersion, setNewVersion] = useState("");
+  const [error, setError] = useState("");
+
+  function addEditor() {
+    const name = newEditor.trim();
+    if (!name) return;
+    const current = editors[selectedTurno] || [];
+    if (current.includes(name)) { setError("Esse editor já tem acesso a este turno."); return; }
+    onSetEditors(selectedTurno, [...current, name]);
+    setNewEditor("");
+    setError("");
+  }
+
+  function removeEditor(name) {
+    const current = editors[selectedTurno] || [];
+    onSetEditors(selectedTurno, current.filter(e => e !== name));
+  }
+
+  function applyVersion() {
+    const v = newVersion.trim();
+    if (!v) return;
+    onSetVersion(selectedTurno, v);
+    setNewVersion("");
+  }
+
+  const currentEditors = editors[selectedTurno] || [];
+
+  return (
+    <ModalWrap onClose={onClose} width={500}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 500, color: TXT }}>Painel de Administração</div>
+          <div style={{ fontSize: 12, color: TXM, marginTop: 2 }}>Gerencie editores e versões por turno</div>
+        </div>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: TXM }}>×</button>
+      </div>
+
+      {/* turno selector */}
+      <div style={{ marginBottom: 18 }}>
+        <label style={{ fontSize: 12, color: TXM, display: "block", marginBottom: 6 }}>Turno selecionado</label>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {turnos.map(t => (
+            <button key={t} onClick={() => { setSelectedTurno(t); setError(""); }}
+              style={{
+                padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontSize: 13,
+                border: selectedTurno === t ? `1px solid ${Y}` : `1px solid ${BDR}`,
+                background: selectedTurno === t ? "#1A1400" : "none",
+                color: selectedTurno === t ? Y : TXM,
+              }}>
+              {t} <span style={{ fontSize: 11, opacity: 0.7 }}>{versions[t] || CURRENT_VERSION}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* section tabs */}
+      <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${BDR}`, marginBottom: 18 }}>
+        {["editors","version"].map(s => (
+          <button key={s} onClick={() => setActiveSection(s)}
+            style={{
+              padding: "8px 18px", border: "none", cursor: "pointer", fontSize: 13,
+              borderBottom: activeSection === s ? `2px solid ${Y}` : "2px solid transparent",
+              background: "none", color: activeSection === s ? Y : TXM, fontWeight: activeSection === s ? 500 : 400,
+            }}>
+            {s === "editors" ? "Editores" : "Versão"}
+          </button>
+        ))}
+      </div>
+
+      {error && <div style={{ background: "#3A0D1A", color: "#E05C7A", borderRadius: 8, padding: "9px 13px", fontSize: 13, marginBottom: 14 }}>{error}</div>}
+
+      {activeSection === "editors" && (
+        <div>
+          <div style={{ fontSize: 13, color: TXM, marginBottom: 12 }}>
+            Editores com acesso ao <span style={{ color: TXT }}>{selectedTurno}</span>:
+          </div>
+
+          {currentEditors.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "16px 0", color: TXM, fontSize: 13, background: SUR, borderRadius: 10, marginBottom: 14 }}>
+              Nenhum editor definido. Apenas a criadora pode editar.
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+              {currentEditors.map(e => (
+                <div key={e} style={{ display: "flex", alignItems: "center", gap: 10, background: SUR, borderRadius: 10, padding: "10px 14px", border: `1px solid ${BDR}` }}>
+                  <div style={{ flex: 1, fontSize: 14, color: TXT }}>{e}</div>
+                  <span style={{ fontSize: 11, background: "#20103A", color: "#A47CF0", borderRadius: 20, padding: "2px 8px" }}>Editor</span>
+                  <button onClick={() => removeEditor(e)}
+                    style={{ padding: "4px 10px", borderRadius: 7, border: "1px solid #3A0D1A", background: "none", cursor: "pointer", fontSize: 12, color: "#E05C7A" }}>
+                    Revogar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{ borderTop: `1px solid ${BDR}`, paddingTop: 14 }}>
+            <div style={{ fontSize: 13, color: TXM, marginBottom: 8 }}>Conceder acesso de editor</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input type="text" placeholder="Nome exato do colaborador"
+                value={newEditor} onChange={e => setNewEditor(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") addEditor(); }}
+                style={{ flex: 1, background: SUR, border: `1px solid ${BDR}`, color: TXT, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }} />
+              <button onClick={addEditor}
+                style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: Y, color: "#000", cursor: "pointer", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap" }}>
+                + Conceder
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeSection === "version" && (
+        <div>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 13, color: TXM, marginBottom: 6 }}>Versão atual do <span style={{ color: TXT }}>{selectedTurno}</span></div>
+            <div style={{ fontSize: 32, fontWeight: 600, color: Y, letterSpacing: 1 }}>
+              {versions[selectedTurno] || CURRENT_VERSION}
+            </div>
+          </div>
+
+          <div style={{ background: SUR, borderRadius: 10, padding: "14px 16px", border: `1px solid ${BDR}`, marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: TXM, marginBottom: 10 }}>Histórico de versões sugeridas</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {["T1","T2","T3","T4","T1.1","T2.1","T3.1"].map(v => (
+                <button key={v} onClick={() => onSetVersion(selectedTurno, v)}
+                  style={{
+                    padding: "5px 14px", borderRadius: 8, cursor: "pointer", fontSize: 13,
+                    border: (versions[selectedTurno] || CURRENT_VERSION) === v ? `1px solid ${Y}` : `1px solid ${BDR}`,
+                    background: (versions[selectedTurno] || CURRENT_VERSION) === v ? "#1A1400" : "none",
+                    color: (versions[selectedTurno] || CURRENT_VERSION) === v ? Y : TXM,
+                  }}>
+                  {v}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ borderTop: `1px solid ${BDR}`, paddingTop: 14 }}>
+            <div style={{ fontSize: 13, color: TXM, marginBottom: 8 }}>Versão personalizada</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input type="text" placeholder="Ex: T2.5, Beta, v3..."
+                value={newVersion} onChange={e => setNewVersion(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") applyVersion(); }}
+                style={{ flex: 1, background: SUR, border: `1px solid ${BDR}`, color: TXT, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }} />
+              <button onClick={applyVersion}
+                style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: Y, color: "#000", cursor: "pointer", fontSize: 13, fontWeight: 500 }}>
+                Aplicar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 22 }}>
+        <button onClick={onClose}
+          style={{ padding: "8px 22px", borderRadius: 8, border: "none", background: Y, color: "#000", cursor: "pointer", fontSize: 14, fontWeight: 500 }}>
+          Fechar
+        </button>
+      </div>
+    </ModalWrap>
+  );
+}
 
 /* ── ADD REP MODAL ── */
 function AddRepModal({ turno, onAdd, onClose }) {
@@ -117,7 +372,7 @@ function AddRepModal({ turno, onAdd, onClose }) {
       <input type="text" placeholder="Nome do rep" value={name}
         onChange={e => setName(e.target.value)}
         onKeyDown={e => { if (e.key === "Enter" && name.trim()) { onAdd(name.trim(), admissao); onClose(); }}}
-        style={{ width: "100%", boxSizing: "border-box", marginBottom: 14, background: SUR, border: `1px solid ${BDR}`, color: TXT, borderRadius: 8, padding: "9px 12px", fontSize: 14 }}
+        style={{ width: "100%", boxSizing: "border-box", marginBottom: 14, background: SUR, border: `1px solid ${BDR}`, color: TXT, borderRadius: 8, padding: "9px 12px", fontSize: 14, outline: "none" }}
         autoFocus />
       <label style={{ fontSize: 12, color: TXM, display: "block", marginBottom: 5 }}>Data de admissão <span style={{ color: TXM, fontWeight: 400 }}>(opcional)</span></label>
       <input type="date" value={admissao} onChange={e => setAdmissao(e.target.value)}
@@ -138,11 +393,7 @@ function ManageTurnosModal({ turnos, onRename, onAdd, onRemove, onClose }) {
   const [newName, setNewName]       = useState("");
   const [error, setError]           = useState("");
 
-  function startEdit(i) {
-    setEditingIdx(i);
-    setEditVal(turnos[i]);
-    setError("");
-  }
+  function startEdit(i) { setEditingIdx(i); setEditVal(turnos[i]); setError(""); }
 
   function saveEdit(i) {
     const name = editVal.trim();
@@ -176,20 +427,15 @@ function ManageTurnosModal({ turnos, onRename, onAdd, onRemove, onClose }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
         {turnos.map((t, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: SUR, borderRadius: 10, padding: "10px 14px", border: `1px solid ${editingIdx === i ? Y : BDR}` }}>
-            {/* drag handle visual */}
             <div style={{ display: "flex", flexDirection: "column", gap: 3, flexShrink: 0, opacity: 0.35 }}>
               {[0,1,2].map(k => <div key={k} style={{ width: 16, height: 2, background: TXM, borderRadius: 2 }} />)}
             </div>
-
             {editingIdx === i ? (
               <>
-                <input
-                  value={editVal}
-                  onChange={e => setEditVal(e.target.value)}
+                <input value={editVal} onChange={e => setEditVal(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter") saveEdit(i); if (e.key === "Escape") setEditingIdx(null); }}
                   style={{ flex: 1, background: SUR2, border: `1px solid ${Y}`, color: TXT, borderRadius: 7, padding: "5px 10px", fontSize: 14, outline: "none" }}
-                  autoFocus
-                />
+                  autoFocus />
                 <button onClick={() => saveEdit(i)}
                   style={{ padding: "5px 14px", borderRadius: 7, border: "none", background: Y, color: "#000", cursor: "pointer", fontSize: 13, fontWeight: 500 }}>OK</button>
                 <button onClick={() => setEditingIdx(null)}
@@ -199,36 +445,24 @@ function ManageTurnosModal({ turnos, onRename, onAdd, onRemove, onClose }) {
               <>
                 <span style={{ flex: 1, fontSize: 14, color: TXT }}>{t}</span>
                 <button onClick={() => startEdit(i)}
-                  style={{ padding: "5px 12px", borderRadius: 7, border: `1px solid ${BDR}`, background: "none", cursor: "pointer", fontSize: 12, color: TXM }}>
-                  Renomear
-                </button>
-                <button
-                  onClick={() => { if (turnos.length <= 1) { setError("É necessário ter ao menos 1 turno."); return; } onRemove(i); }}
-                  style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid #3A0D1A", background: "none", cursor: "pointer", fontSize: 12, color: "#E05C7A" }}>
-                  ✕
-                </button>
+                  style={{ padding: "5px 12px", borderRadius: 7, border: `1px solid ${BDR}`, background: "none", cursor: "pointer", fontSize: 12, color: TXM }}>Renomear</button>
+                <button onClick={() => { if (turnos.length <= 1) { setError("É necessário ter ao menos 1 turno."); return; } onRemove(i); }}
+                  style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid #3A0D1A", background: "none", cursor: "pointer", fontSize: 12, color: "#E05C7A" }}>✕</button>
               </>
             )}
           </div>
         ))}
       </div>
 
-      {/* add new */}
       <div style={{ borderTop: `1px solid ${BDR}`, paddingTop: 16 }}>
         <div style={{ fontSize: 13, color: TXM, marginBottom: 10 }}>Adicionar novo turno</div>
         <div style={{ display: "flex", gap: 8 }}>
-          <input
-            type="text"
-            placeholder="Ex: Turno 4, Turno Noturno..."
-            value={newName}
+          <input type="text" placeholder="Ex: Turno 4, Turno Noturno..." value={newName}
             onChange={e => setNewName(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") handleAdd(); }}
-            style={{ flex: 1, background: SUR, border: `1px solid ${BDR}`, color: TXT, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }}
-          />
+            style={{ flex: 1, background: SUR, border: `1px solid ${BDR}`, color: TXT, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }} />
           <button onClick={handleAdd}
-            style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: Y, color: "#000", cursor: "pointer", fontSize: 13, fontWeight: 500 }}>
-            + Adicionar
-          </button>
+            style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: Y, color: "#000", cursor: "pointer", fontSize: 13, fontWeight: 500 }}>+ Adicionar</button>
         </div>
       </div>
 
@@ -410,8 +644,8 @@ function ImportModal({ turno, onImport, onClose }) {
   );
 }
 
-/* ── REP CARD — inline live edit ── */
-function RepCard({ rep, values, onUpdate, onRemove }) {
+/* ── REP CARD ── */
+function RepCard({ rep, values, onUpdate, onRemove, canEdit }) {
   const [expanded, setExpanded] = useState(false);
   const a = avg(TAREFAS.map(t => values[t]));
   const initials = rep.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
@@ -429,7 +663,6 @@ function RepCard({ rep, values, onUpdate, onRemove }) {
       display: "flex", flexDirection: "column", gap: 14,
       transition: "border-color 0.25s",
     }}>
-      {/* header */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{
           width: 42, height: 42, borderRadius: "50%",
@@ -451,7 +684,6 @@ function RepCard({ rep, values, onUpdate, onRemove }) {
         <RadialProgress pct={a} color={Y} size={48} />
       </div>
 
-      {/* progress bars — always visible */}
       <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
         {TAREFAS.map(t => {
           const v = values[t];
@@ -468,29 +700,24 @@ function RepCard({ rep, values, onUpdate, onRemove }) {
         })}
       </div>
 
-      {/* inline edit panel — shown when expanded */}
-      {expanded && (
+      {canEdit && expanded && (
         <div style={{ borderTop: `1px solid ${BDR}`, paddingTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-          {/* admissao */}
           <div>
             <label style={{ fontSize: 11, color: TXM, display: "block", marginBottom: 5 }}>Data de admissão</label>
             <input type="date" value={values.admissao || ""}
               onChange={e => liveUpdate("admissao", e.target.value)}
               style={{ background: SUR2, border: `1px solid ${BDR}`, color: TXT, borderRadius: 8, padding: "7px 10px", fontSize: 13, colorScheme: "dark", width: "100%", boxSizing: "border-box" }} />
           </div>
-          {/* sliders */}
           {TAREFAS.map(t => (
             <div key={t} style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 8, height: 8, borderRadius: 2, background: TASK_COLORS[t], flexShrink: 0 }} />
               <span style={{ fontSize: 12, color: TXT, width: 96, flexShrink: 0 }}>{t}</span>
-              <button
-                onClick={() => liveUpdate(t, Math.max(0, values[t] - 25))}
+              <button onClick={() => liveUpdate(t, Math.max(0, values[t] - 25))}
                 style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${BDR}`, background: SUR2, color: TXM, cursor: "pointer", fontSize: 15, lineHeight: 1, flexShrink: 0 }}>−</button>
               <input type="range" min={0} max={100} step={25} value={values[t]}
                 onChange={e => liveUpdate(t, Number(e.target.value))}
                 style={{ flex: 1, accentColor: Y }} />
-              <button
-                onClick={() => liveUpdate(t, Math.min(100, values[t] + 25))}
+              <button onClick={() => liveUpdate(t, Math.min(100, values[t] + 25))}
                 style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${BDR}`, background: SUR2, color: TXM, cursor: "pointer", fontSize: 15, lineHeight: 1, flexShrink: 0 }}>+</button>
               <span style={{ fontSize: 12, fontWeight: 500, color: Y, width: 34, textAlign: "right" }}>{values[t]}%</span>
             </div>
@@ -498,24 +725,25 @@ function RepCard({ rep, values, onUpdate, onRemove }) {
         </div>
       )}
 
-      {/* action bar */}
-      <div style={{ display: "flex", gap: 8, borderTop: `1px solid ${BDR}`, paddingTop: 12 }}>
-        <button onClick={() => setExpanded(e => !e)}
-          style={{
-            flex: 1, padding: "7px 0", borderRadius: 8,
-            border: `1px solid ${expanded ? Y + "66" : BDR}`,
-            background: expanded ? "#1A1400" : "none",
-            cursor: "pointer", fontSize: 12,
-            color: expanded ? Y : TXM,
-            transition: "all 0.2s",
-          }}>
-          {expanded ? "✓ Concluir edição" : "Editar"}
-        </button>
-        <button onClick={() => onRemove(rep)}
-          style={{ padding: "7px 14px", borderRadius: 8, border: "1px solid #3A0D1A", background: "none", cursor: "pointer", fontSize: 12, color: "#E05C7A" }}>
-          Remover
-        </button>
-      </div>
+      {canEdit && (
+        <div style={{ display: "flex", gap: 8, borderTop: `1px solid ${BDR}`, paddingTop: 12 }}>
+          <button onClick={() => setExpanded(e => !e)}
+            style={{
+              flex: 1, padding: "7px 0", borderRadius: 8,
+              border: `1px solid ${expanded ? Y + "66" : BDR}`,
+              background: expanded ? "#1A1400" : "none",
+              cursor: "pointer", fontSize: 12,
+              color: expanded ? Y : TXM,
+              transition: "all 0.2s",
+            }}>
+            {expanded ? "✓ Concluir edição" : "Editar"}
+          </button>
+          <button onClick={() => onRemove(rep)}
+            style={{ padding: "7px 14px", borderRadius: 8, border: "1px solid #3A0D1A", background: "none", cursor: "pointer", fontSize: 12, color: "#E05C7A" }}>
+            Remover
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -546,33 +774,44 @@ function TurnoSummary({ turnoData }) {
 
 /* ── APP ── */
 export default function App() {
-  const [turnos, setTurnos] = useState(INIT_TURNOS);
-  const [data, setData]     = useState(initialData);
-  const [activeTab, setActiveTab]       = useState(INIT_TURNOS[0]);
-  const [showAdd, setShowAdd]           = useState(false);
-  const [showImport, setShowImport]     = useState(false);
-  const [showManage, setShowManage]     = useState(false);
-  const [search, setSearch]             = useState("");
+  const [turnos, setTurnos]     = useState(() => loadState("icqa_turnos", INIT_TURNOS));
+  const [data, setData]         = useState(() => loadState("icqa_data", null) || initialData());
+  const [versions, setVersions] = useState(() => loadState("icqa_versions", Object.fromEntries(INIT_TURNOS.map(t => [t, CURRENT_VERSION]))));
+  const [editors, setEditors]   = useState(() => loadState("icqa_editors", {}));
+  const [currentUser, setCurrentUser] = useState(() => loadState("icqa_user", null));
+  const [activeTab, setActiveTab]     = useState(turnos[0]);
+  const [showAdd, setShowAdd]         = useState(false);
+  const [showImport, setShowImport]   = useState(false);
+  const [showManage, setShowManage]   = useState(false);
+  const [showLogin, setShowLogin]     = useState(false);
+  const [showAdmin, setShowAdmin]     = useState(false);
+  const [search, setSearch]           = useState("");
+
+  useEffect(() => { saveState("icqa_turnos", turnos); }, [turnos]);
+  useEffect(() => { saveState("icqa_data", data); }, [data]);
+  useEffect(() => { saveState("icqa_versions", versions); }, [versions]);
+  useEffect(() => { saveState("icqa_editors", editors); }, [editors]);
+  useEffect(() => { saveState("icqa_user", currentUser); }, [currentUser]);
+
+  const isCreator = currentUser?.isCreator === true;
+  const canEditTab = isCreator || (currentUser && (editors[activeTab] || []).includes(currentUser.name));
 
   const turnoData = data[activeTab] || {};
   const repList = Object.keys(turnoData).filter(r => r.toLowerCase().includes(search.toLowerCase()));
 
-  /* turno management */
   const handleRenameTurno = useCallback((idx, newName) => {
     const oldName = turnos[idx];
     setTurnos(ts => ts.map((t, i) => i === idx ? newName : t));
-    setData(d => {
-      const updated = { ...d };
-      updated[newName] = updated[oldName];
-      delete updated[oldName];
-      return updated;
-    });
+    setData(d => { const u = { ...d }; u[newName] = u[oldName]; delete u[oldName]; return u; });
+    setVersions(v => { const u = { ...v }; u[newName] = u[oldName]; delete u[oldName]; return u; });
+    setEditors(e => { const u = { ...e }; u[newName] = u[oldName]; delete u[oldName]; return u; });
     setActiveTab(prev => prev === oldName ? newName : prev);
   }, [turnos]);
 
   const handleAddTurno = useCallback((name) => {
     setTurnos(ts => [...ts, name]);
     setData(d => ({ ...d, [name]: makeEmptyTurno() }));
+    setVersions(v => ({ ...v, [name]: CURRENT_VERSION }));
   }, []);
 
   const handleRemoveTurno = useCallback((idx) => {
@@ -580,10 +819,11 @@ export default function App() {
     const newTurnos = turnos.filter((_, i) => i !== idx);
     setTurnos(newTurnos);
     setData(d => { const u = { ...d }; delete u[name]; return u; });
+    setVersions(v => { const u = { ...v }; delete u[name]; return u; });
+    setEditors(e => { const u = { ...e }; delete u[name]; return u; });
     setActiveTab(prev => prev === name ? newTurnos[0] : prev);
   }, [turnos]);
 
-  /* rep management */
   const handleUpdate = useCallback((turno, rep, vals) => {
     setData(d => ({ ...d, [turno]: { ...d[turno], [rep]: vals } }));
   }, []);
@@ -608,8 +848,18 @@ export default function App() {
     });
   }, [activeTab]);
 
+  const handleSetVersion = useCallback((turno, version) => {
+    setVersions(v => ({ ...v, [turno]: version }));
+  }, []);
+
+  const handleSetEditors = useCallback((turno, editorList) => {
+    setEditors(e => ({ ...e, [turno]: editorList }));
+  }, []);
+
+  const activeVersion = versions[activeTab] || CURRENT_VERSION;
+
   return (
-    <div style={{ background: BG, minHeight: "100vh", padding: "0 0 60px", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+    <div style={{ background: BG, minHeight: "100vh", paddingBottom: 48, fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
 
       {/* ── HEADER ── */}
       <div style={{ borderBottom: `1px solid ${BDR}`, padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -622,10 +872,42 @@ export default function App() {
           </div>
           <div style={{ fontSize: 13, color: TXM, marginTop: 2, marginLeft: 38 }}>Acompanhe o desempenho por turno e tarefa</div>
         </div>
-        <button onClick={() => setShowImport(true)}
-          style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${Y}`, background: "transparent", color: Y, cursor: "pointer", fontSize: 13, fontWeight: 500 }}>
-          ↑ Importar planilha
-        </button>
+
+        {/* right side: user + actions */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {isCreator && (
+            <button onClick={() => setShowAdmin(true)}
+              title="Painel de administração"
+              style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid #20103A`, background: "#20103A", color: "#A47CF0", cursor: "pointer", fontSize: 12, fontWeight: 500 }}>
+              ⚙ Admin
+            </button>
+          )}
+          <button onClick={() => setShowImport(true)}
+            style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${Y}`, background: "transparent", color: Y, cursor: "pointer", fontSize: 13, fontWeight: 500 }}>
+            ↑ Importar planilha
+          </button>
+
+          {currentUser ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 12, color: TXT, fontWeight: 500 }}>{currentUser.name}</div>
+                <div style={{ fontSize: 11, color: isCreator ? Y : TXM }}>
+                  {isCreator ? "Criadora" : canEditTab ? `Editor — ${activeTab}` : "Visualizador"}
+                </div>
+              </div>
+              <button onClick={() => setCurrentUser(null)}
+                title="Sair"
+                style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${BDR}`, background: "none", cursor: "pointer", fontSize: 13, color: TXM }}>
+                ↩
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setShowLogin(true)}
+              style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${BDR}`, background: "none", color: TXM, cursor: "pointer", fontSize: 13 }}>
+              Entrar
+            </button>
+          )}
+        </div>
       </div>
 
       <div style={{ padding: "0 24px" }}>
@@ -644,7 +926,16 @@ export default function App() {
                 }}>
                 {t}
                 <span style={{
-                  marginLeft: 7, fontSize: 11, borderRadius: 20, padding: "2px 7px", fontWeight: 500,
+                  marginLeft: 6, fontSize: 10, borderRadius: 4, padding: "1px 6px", fontWeight: 600,
+                  background: activeTab === t ? "#1A1400" : SUR,
+                  color: activeTab === t ? Y : TXM,
+                  border: `1px solid ${activeTab === t ? Y + "44" : BDR}`,
+                  letterSpacing: "0.5px",
+                }}>
+                  {versions[t] || CURRENT_VERSION}
+                </span>
+                <span style={{
+                  marginLeft: 5, fontSize: 11, borderRadius: 20, padding: "2px 7px", fontWeight: 500,
                   background: activeTab === t ? "#3A2E00" : SUR,
                   color: activeTab === t ? Y : TXM,
                 }}>
@@ -654,37 +945,53 @@ export default function App() {
             ))}
           </div>
 
-          {/* manage turnos button */}
-          <button
-            onClick={() => setShowManage(true)}
-            title="Gerenciar turnos"
-            style={{
-              flexShrink: 0, marginLeft: 8, padding: "7px 13px",
-              borderRadius: 8, border: `1px solid ${BDR}`,
-              background: "none", cursor: "pointer", fontSize: 12,
-              color: TXM, display: "flex", alignItems: "center", gap: 6,
-              transition: "border-color 0.2s, color 0.2s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = Y; e.currentTarget.style.color = Y; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = BDR; e.currentTarget.style.color = TXM; }}>
-            ⚙ Gerenciar turnos
-          </button>
+          {isCreator && (
+            <button onClick={() => setShowManage(true)} title="Gerenciar turnos"
+              style={{
+                flexShrink: 0, marginLeft: 8, padding: "7px 13px",
+                borderRadius: 8, border: `1px solid ${BDR}`,
+                background: "none", cursor: "pointer", fontSize: 12,
+                color: TXM, display: "flex", alignItems: "center", gap: 6,
+                transition: "border-color 0.2s, color 0.2s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = Y; e.currentTarget.style.color = Y; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = BDR; e.currentTarget.style.color = TXM; }}>
+              ⚙ Gerenciar turnos
+            </button>
+          )}
         </div>
 
         <TurnoSummary turnoData={turnoData} />
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12 }}>
-          <input type="text" placeholder="Buscar rep..." value={search} onChange={e => setSearch(e.target.value)}
-            style={{ maxWidth: 240, background: SUR, border: `1px solid ${BDR}`, color: TXT, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <input type="text" placeholder="Buscar rep..." value={search} onChange={e => setSearch(e.target.value)}
+              style={{ maxWidth: 240, background: SUR, border: `1px solid ${BDR}`, color: TXT, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }} />
+            {!canEditTab && currentUser && (
+              <span style={{ fontSize: 12, color: TXM, background: SUR, borderRadius: 8, padding: "6px 12px", border: `1px solid ${BDR}` }}>
+                👁 Modo visualização
+              </span>
+            )}
+            {!currentUser && (
+              <button onClick={() => setShowLogin(true)}
+                style={{ fontSize: 12, color: TXM, background: SUR, borderRadius: 8, padding: "6px 12px", border: `1px solid ${BDR}`, cursor: "pointer" }}>
+                Entre para editar
+              </button>
+            )}
+          </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => setShowImport(true)}
-              style={{ padding: "8px 14px", borderRadius: 8, border: `1px solid ${BDR}`, background: "none", cursor: "pointer", fontSize: 12, color: TXM }}>
-              Vincular planilha
-            </button>
-            <button onClick={() => setShowAdd(true)}
-              style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: Y, color: "#000", cursor: "pointer", fontSize: 13, fontWeight: 500 }}>
-              + Adicionar rep
-            </button>
+            {canEditTab && (
+              <>
+                <button onClick={() => setShowImport(true)}
+                  style={{ padding: "8px 14px", borderRadius: 8, border: `1px solid ${BDR}`, background: "none", cursor: "pointer", fontSize: 12, color: TXM }}>
+                  Vincular planilha
+                </button>
+                <button onClick={() => setShowAdd(true)}
+                  style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: Y, color: "#000", cursor: "pointer", fontSize: 13, fontWeight: 500 }}>
+                  + Adicionar rep
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -697,20 +1004,53 @@ export default function App() {
             {repList.map(rep => (
               <RepCard key={rep} rep={rep} values={turnoData[rep]}
                 onUpdate={(r, vals) => handleUpdate(activeTab, r, vals)}
-                onRemove={r => handleRemove(r, activeTab)} />
+                onRemove={r => handleRemove(r, activeTab)}
+                canEdit={canEditTab} />
             ))}
           </div>
         )}
       </div>
 
+      {/* ── BOTTOM BAR ── */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0,
+        height: 36,
+        background: SUR, borderTop: `1px solid ${BDR}`,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 20px", zIndex: 100,
+      }}>
+        <div style={{ fontSize: 11, color: TXM, display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ color: Y, fontWeight: 600, letterSpacing: "0.5px" }}>{activeVersion}</span>
+          <span>·</span>
+          <span>{activeTab}</span>
+          {canEditTab && <span style={{ color: "#3EC97A", marginLeft: 4 }}>✓ editando</span>}
+        </div>
+        <div style={{ fontSize: 10, color: "#555", fontStyle: "italic", letterSpacing: "0.3px" }}>
+          Criado por Melyssa Rangel de Figueiredo
+        </div>
+      </div>
 
-      {showAdd && (
+      {/* ── MODALS ── */}
+      {showLogin && <LoginModal onLogin={setCurrentUser} onClose={() => setShowLogin(false)} />}
+
+      {showAdmin && isCreator && (
+        <AdminModal
+          turnos={turnos}
+          versions={versions}
+          editors={editors}
+          onSetVersion={handleSetVersion}
+          onSetEditors={handleSetEditors}
+          onClose={() => setShowAdmin(false)}
+        />
+      )}
+
+      {showAdd && canEditTab && (
         <AddRepModal turno={activeTab} onAdd={(name, admissao) => handleAdd(name, activeTab, admissao)} onClose={() => setShowAdd(false)} />
       )}
-      {showImport && (
+      {showImport && canEditTab && (
         <ImportModal turno={activeTab} onImport={handleImport} onClose={() => setShowImport(false)} />
       )}
-      {showManage && (
+      {showManage && isCreator && (
         <ManageTurnosModal
           turnos={turnos}
           onRename={handleRenameTurno}
