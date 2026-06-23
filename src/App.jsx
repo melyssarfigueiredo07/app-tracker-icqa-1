@@ -932,7 +932,8 @@ export default function App(){
         const tr=rTr.data; const ps=rPs.data; const trs=rTrs.data;
         const trackerRaw=tr?.data?.data?.IC ? tr.data.data : (tr?.data?.IC ? tr.data : tr);
         const psList=ps?.data?.list ?? ps?.list ?? null;
-        const trsData=trs?.data?.data ?? trs?.data ?? trs;
+        const trsRaw=trs?.data?.data ?? trs?.data ?? trs;
+        const trsData=trsRaw?.PS ?? (typeof trsRaw==="object"&&!Array.isArray(trsRaw)&&Object.values(trsRaw||{}).every(v=>v?.name)?trsRaw:null);
         setData(d=>{
           const t2={...d["T2"]};
           if(trackerRaw?.IC) t2["Desenvolvimento"]=fromTracker(trackerRaw);

@@ -62,12 +62,9 @@ export const STATIC_PS_LIST = [
 ];
 
 export const STATIC_TR_DATA = {
-  PS: {
-    "mqg5lif19rei": {"name":"DANIELLE SOARES ALVES SANTOS","role":"Op Log 1","admission":"2025-05-05","trainings":[{"id":"mqg5lroccsnv","date":"","done":true,"name":"Outbound","note":"","doneDate":"2026-06-16"}]},
-    "mqg5mbju7dnb": {"name":"ISAQUE RIBEIRO PEREIRA BRAGA","role":"Op Log 1","admission":"2025-07-07","trainings":[{"id":"mqg5mm9hspia","date":"","done":true,"name":"Outbound","note":"","doneDate":"2026-06-16"}]},
-    "mqg5mufc5x6k": {"name":"ROBERTA FERREIRA LUCIO ARAUJO","role":"Op Log 1","admission":"2025-05-05","trainings":[{"id":"mqg5mz4n66e9","date":"","done":true,"name":"Inbound","note":"","doneDate":"2026-06-16"}]},
-    "mqg5ndopikhq": {"name":"RENATA DA SILVA ROCHA","role":"Op Log 1","admission":"2025-05-05","trainings":[{"id":"mqg5np0uv1ft","date":"","done":true,"name":"Outbound","note":"","doneDate":"2026-06-16"}]},
-    "mqg5of9n0xau": {"name":"MELYSSA RANGEL DE FIGUEIREDO","role":"Op Log 1","admission":"2025-04-07","trainings":[{"id":"mqg5ow0o15xo","date":"","done":true,"name":"Qualidade - Tarefas","note":"","doneDate":"2026-06-16"},{"id":"mqg5p39qbu8t","date":"","done":true,"name":"Qualidade - Auditorias","note":"","doneDate":"2026-06-16"},{"id":"mqg5pd3si1m8","date":"","done":false,"name":"Qualidade - RNC","note":"","doneDate":""},{"id":"mqg5pmw433hv","date":"","done":false,"name":"Qualidade - Cubing/CEM","note":"","doneDate":""},{"id":"mqg5q625spm7","date":"","done":false,"name":"Qualidade - Indicadores","note":"","doneDate":""}]}
-  },
-  Reps: {}
+  "mqg5lif19rei": {"name":"DANIELLE SOARES ALVES SANTOS","role":"Op Log 1","admission":"2025-05-05","trainings":[{"id":"mqg5lroccsnv","date":"","done":true,"name":"Outbound","note":"","doneDate":"2026-06-16"}]},
+  "mqg5mbju7dnb": {"name":"ISAQUE RIBEIRO PEREIRA BRAGA","role":"Op Log 1","admission":"2025-07-07","trainings":[{"id":"mqg5mm9hspia","date":"","done":true,"name":"Outbound","note":"","doneDate":"2026-06-16"}]},
+  "mqg5mufc5x6k": {"name":"ROBERTA FERREIRA LUCIO ARAUJO","role":"Op Log 1","admission":"2025-05-05","trainings":[{"id":"mqg5mz4n66e9","date":"","done":true,"name":"Inbound","note":"","doneDate":"2026-06-16"}]},
+  "mqg5ndopikhq": {"name":"RENATA DA SILVA ROCHA","role":"Op Log 1","admission":"2025-05-05","trainings":[{"id":"mqg5np0uv1ft","date":"","done":true,"name":"Outbound","note":"","doneDate":"2026-06-16"}]},
+  "mqg5of9n0xau": {"name":"MELYSSA RANGEL DE FIGUEIREDO","role":"Op Log 1","admission":"2025-04-07","trainings":[{"id":"mqg5ow0o15xo","date":"","done":true,"name":"Qualidade - Tarefas","note":"","doneDate":"2026-06-16"},{"id":"mqg5p39qbu8t","date":"","done":true,"name":"Qualidade - Auditorias","note":"","doneDate":"2026-06-16"},{"id":"mqg5pd3si1m8","date":"","done":false,"name":"Qualidade - RNC","note":"","doneDate":""},{"id":"mqg5pmw433hv","date":"","done":false,"name":"Qualidade - Cubing/CEM","note":"","doneDate":""},{"id":"mqg5q625spm7","date":"","done":false,"name":"Qualidade - Indicadores","note":"","doneDate":""}]}
 };
