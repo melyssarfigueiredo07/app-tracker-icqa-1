@@ -7,12 +7,14 @@ const GLOBAL_CSS=`
   --y:#F5C518; --bg:#0D0D0D; --sur:#1A1A1A; --sur2:#242424;
   --bdr:#2E2E2E; --txt:#F0F0F0; --txm:#A0A0A0;
   --card-bg:#1A1A1A; --inp-bg:#111111; --inp-bdr:#444;
+  --ferias-bg:#0A1A10;
   font-family:'Segoe UI',system-ui,-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
 }
 [data-theme="light"] {
   --bg:#F4F5F7; --sur:#FFFFFF; --sur2:#F0F1F3;
   --bdr:#D8DADF; --txt:#1A1A1A; --txm:#6B7280;
   --card-bg:#FFFFFF; --inp-bg:#FFFFFF; --inp-bdr:#C4C9D4;
+  --ferias-bg:#D6F5E3;
 }
 @keyframes feriasPulse{
   0%,100%{box-shadow:0 0 0 0 #3EC9C444,0 0 12px 2px #3EC9C422;}
@@ -586,7 +588,7 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
   const emFerias=isOnFerias(values.feriasIni,values.feriasFim);
 
   return(
-    <div style={{background:emFerias?"#0A1A10":SUR,border:`1px solid ${emFerias?"#3EC97A55":expanded?Y+"55":BDR}`,borderRadius:16,padding:18,display:"flex",flexDirection:"column",gap:12,transition:"border-color 0.2s",animation:emFerias?"feriasPulse 2.5s ease-in-out infinite":undefined}}>
+    <div style={{background:emFerias?"var(--ferias-bg, #0A1A10)":SUR,border:`1px solid ${emFerias?"#3EC97A66":expanded?"#F5C51855":BDR}`,borderRadius:16,padding:18,display:"flex",flexDirection:"column",gap:12,transition:"border-color 0.2s",animation:emFerias?"feriasPulse 2.5s ease-in-out infinite":undefined}}>
       <div style={{display:"flex",alignItems:"center",gap:12}}>
         <div style={{position:"relative",flexShrink:0}}>
           <div onClick={()=>setShowInfo(s=>!s)} style={{width:40,height:40,borderRadius:"50%",background:emFerias?"#003A1E":SUR2,border:`1.5px solid ${emFerias?"#3EC97A":showInfo?Y:BDR}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:emFerias?15:13,cursor:"pointer",transition:"all 0.2s",color:emFerias?"#3EC97A":showInfo?Y:TXT,fontWeight:600}}>
@@ -707,7 +709,7 @@ function FichaCard({item,canEdit,onRemove}){
   const ferias=item.feriasIni&&item.feriasFim?`${item.feriasIni} → ${item.feriasFim} (${item.feriasDias||0}d)`:null;
   const emFerias=isOnFerias(item.feriasIni,item.feriasFim);
   return(
-    <div style={{background:emFerias?"#0A1A10":SUR,border:`1px solid ${emFerias?"#3EC97A55":expanded?Y+"55":BDR}`,borderRadius:16,padding:18,display:"flex",flexDirection:"column",gap:10,transition:"border-color 0.2s",animation:emFerias?"feriasPulse 2.5s ease-in-out infinite":undefined}}>
+    <div style={{background:emFerias?"var(--ferias-bg, #0A1A10)":SUR,border:`1px solid ${emFerias?"#3EC97A66":expanded?"#F5C51855":BDR}`,borderRadius:16,padding:18,display:"flex",flexDirection:"column",gap:10,transition:"border-color 0.2s",animation:emFerias?"feriasPulse 2.5s ease-in-out infinite":undefined}}>
       <div style={{display:"flex",alignItems:"center",gap:12}}>
         <div style={{position:"relative",flexShrink:0}}>
           <div onClick={()=>setShowInfo(s=>!s)} style={{width:40,height:40,borderRadius:"50%",background:emFerias?"#003A1E":SUR2,border:`1.5px solid ${emFerias?"#3EC97A":showInfo?Y:BDR}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:emFerias?15:13,fontWeight:600,color:emFerias?"#3EC97A":showInfo?Y:TXT,cursor:"pointer",transition:"all 0.2s"}}>
@@ -1142,11 +1144,14 @@ export default function App(){
 
         <div style={{width:"100%",maxWidth:420}}>
           {/* logo block */}
-          <div style={{textAlign:"center",marginBottom:40}}>
-            <div style={{display:"inline-flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#F5C518",borderRadius:20,padding:"18px 32px",marginBottom:20,boxShadow:"0 6px 32px #F5C51855"}}>
-              <span style={{fontSize:13,fontWeight:900,color:"#111",letterSpacing:"0.18em",fontFamily:"'Segoe UI',system-ui,sans-serif",lineHeight:1}}>ICQA</span>
-              <div style={{width:"100%",height:1.5,background:"#11111133",margin:"7px 0"}}/>
-              <span style={{fontSize:11,fontWeight:700,color:"#333",letterSpacing:"0.22em",fontFamily:"'Segoe UI',system-ui,sans-serif",lineHeight:1}}>TRACKER</span>
+          <div style={{textAlign:"center",marginBottom:36}}>
+            <div style={{display:"inline-block",background:"#F5C518",borderRadius:22,padding:"22px 40px",marginBottom:22,boxShadow:"0 8px 40px #F5C51866"}}>
+              <div style={{fontSize:36,fontWeight:900,color:"#111",letterSpacing:"0.1em",lineHeight:1,fontFamily:"'Segoe UI',system-ui,sans-serif"}}>ICQA</div>
+              <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center",margin:"8px 0 0"}}>
+                <div style={{height:2,flex:1,background:"#1116",borderRadius:2}}/>
+                <span style={{fontSize:11,fontWeight:800,color:"#333",letterSpacing:"0.35em",fontFamily:"'Segoe UI',system-ui,sans-serif"}}>TRACKER</span>
+                <div style={{height:2,flex:1,background:"#1116",borderRadius:2}}/>
+              </div>
             </div>
             <div style={{color:TXM,fontSize:14,fontWeight:400,letterSpacing:"0.01em"}}>Identifique-se para continuar</div>
           </div>
