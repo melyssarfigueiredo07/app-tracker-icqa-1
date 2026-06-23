@@ -1017,6 +1017,8 @@ export default function App(){
 
   const [activeVer,setActiveVer]=useState(()=>{
     const s=loadState("icqa2_versoes",["T1","T2"]);
+    const last=localStorage.getItem("icqa2_last_turno");
+    if(last&&s.includes(last)) return last;
     return s.includes("T2")?"T2":s[0];
   });
   const [activeSec,setActiveSec]=useState(SECOES[0]);
@@ -1029,11 +1031,16 @@ export default function App(){
   const [showImport,setShowImport]=useState(false);
   const [showAddTr,setShowAddTr]=useState(false);
   const [showTaskMgr,setShowTaskMgr]=useState(false);
-  /* Show turno/CAD picker on every fresh page load (sessionStorage resets on tab close) */
-  const [showPicker,setShowPicker]=useState(()=>!sessionStorage.getItem("icqa_picked"));
-  const [showIdent,setShowIdent]=useState(()=>!sessionStorage.getItem("icqa_ident"));
-  const [identName,setIdentName]=useState(()=>sessionStorage.getItem("icqa_ident_name")||"");
-  const [identCad,setIdentCad]=useState(()=>sessionStorage.getItem("icqa_ident_cad")||"");
+  /* Show picker only when no last turno saved (user already identified + had a turno before) */
+  const [showPicker,setShowPicker]=useState(()=>{
+    if(sessionStorage.getItem("icqa_picked")) return false;
+    const hasIdent=!!localStorage.getItem("icqa2_ident_name");
+    const hasLastTurno=!!localStorage.getItem("icqa2_last_turno");
+    return !(hasIdent&&hasLastTurno);
+  });
+  const [showIdent,setShowIdent]=useState(()=>!localStorage.getItem("icqa2_ident_name"));
+  const [identName,setIdentName]=useState(()=>localStorage.getItem("icqa2_ident_name")||"");
+  const [identCad,setIdentCad]=useState(()=>localStorage.getItem("icqa2_ident_cad")||"");
 
   /* Load from Supabase on mount */
   useEffect(()=>{
@@ -1227,9 +1234,8 @@ export default function App(){
       const n=identName.trim();
       const c=identCad.trim();
       if(!n||!c) return;
-      sessionStorage.setItem("icqa_ident","1");
-      sessionStorage.setItem("icqa_ident_name",n);
-      sessionStorage.setItem("icqa_ident_cad",c);
+      localStorage.setItem("icqa2_ident_name",n);
+      localStorage.setItem("icqa2_ident_cad",c);
       // log access
       const prev=JSON.parse(localStorage.getItem("icqa2_access_log")||"[]");
       prev.unshift({name:n,cad:c.toUpperCase(),at:new Date().toISOString()});
