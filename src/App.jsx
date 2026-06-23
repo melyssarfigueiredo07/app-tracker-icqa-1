@@ -1,6 +1,23 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { sb } from "./lib/supabase";
 import { STATIC_TRACKER, STATIC_PS_LIST, STATIC_TR_DATA } from "./staticData";
+
+const FERIAS_CSS=`
+@keyframes feriasPulse{
+  0%,100%{box-shadow:0 0 0 0 #3EC9C444,0 0 12px 2px #3EC9C422;}
+  50%{box-shadow:0 0 0 6px #3EC9C400,0 0 20px 6px #3EC9C433;}
+}
+@keyframes feriasShimmer{
+  0%{background-position:200% center;}
+  100%{background-position:-200% center;}
+}
+@keyframes feriasWave{
+  0%,100%{transform:rotate(-10deg);}
+  50%{transform:rotate(10deg);}
+}`;
+if(typeof document!=="undefined"){
+  const s=document.createElement("style");s.textContent=FERIAS_CSS;document.head.appendChild(s);
+}
 
 /* ── palette ── */
 const Y    = "#F5C518";
@@ -44,6 +61,11 @@ const TASK_DIM = {
 };
 
 /* ── helpers ── */
+function isOnFerias(ini,fim){
+  if(!ini||!fim) return false;
+  const today=new Date().toISOString().slice(0,10);
+  return today>=ini&&today<=fim;
+}
 function pctColor(v){
   if(v<=0)  return "#555";
   if(v<=25) return "#E05C7A";
@@ -519,16 +541,22 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
   const ferias = values.feriasIni && values.feriasFim
     ? `${values.feriasIni} → ${values.feriasFim} (${values.feriasDias||0}d)`
     : null;
+  const emFerias=isOnFerias(values.feriasIni,values.feriasFim);
 
   return(
-    <div style={{background:SUR,border:`1px solid ${expanded?Y+"55":BDR}`,borderRadius:16,padding:18,display:"flex",flexDirection:"column",gap:12,transition:"border-color 0.2s"}}>
+    <div style={{background:emFerias?"#0A1A10":SUR,border:`1px solid ${emFerias?"#3EC97A55":expanded?Y+"55":BDR}`,borderRadius:16,padding:18,display:"flex",flexDirection:"column",gap:12,transition:"border-color 0.2s",animation:emFerias?"feriasPulse 2.5s ease-in-out infinite":undefined}}>
       <div style={{display:"flex",alignItems:"center",gap:12}}>
         <div style={{position:"relative",flexShrink:0}}>
-          <div onClick={()=>setShowInfo(s=>!s)} style={{width:40,height:40,borderRadius:"50%",background:SUR2,border:`1.5px solid ${showInfo?Y:BDR}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:600,color:showInfo?Y:TXT,cursor:"pointer",transition:"all 0.2s"}}>{initials}</div>
+          <div onClick={()=>setShowInfo(s=>!s)} style={{width:40,height:40,borderRadius:"50%",background:emFerias?"#003A1E":SUR2,border:`1.5px solid ${emFerias?"#3EC97A":showInfo?Y:BDR}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:emFerias?15:13,cursor:"pointer",transition:"all 0.2s",color:emFerias?"#3EC97A":showInfo?Y:TXT,fontWeight:600}}>
+            {emFerias?<span style={{animation:"feriasWave 1s ease-in-out infinite",display:"inline-block"}}>🏖</span>:initials}
+          </div>
           {showInfo&&<InfoTooltip values={values} ferias={ferias} onClose={()=>setShowInfo(false)}/>}
         </div>
         <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:13,fontWeight:500,color:TXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginBottom:2}}>{rep}</div>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+            <span style={{fontSize:13,fontWeight:500,color:TXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{rep}</span>
+            {emFerias&&<span style={{fontSize:10,fontWeight:600,color:"#3EC97A",background:"#003A1E",borderRadius:20,padding:"1px 7px",flexShrink:0,animation:"feriasShimmer 3s linear infinite",backgroundImage:"linear-gradient(90deg,#3EC97A,#7FFFBF,#3EC97A)",backgroundSize:"200% auto",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Férias</span>}
+          </div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:2}}>
             {values.re&&<span style={{fontSize:10,color:TXM}}>RE {values.re}</span>}
             {values.cargo&&<span style={{fontSize:10,background:SUR2,color:TXM,borderRadius:4,padding:"1px 5px"}}>{values.cargo}</span>}
@@ -635,22 +663,28 @@ function FichaCard({item,canEdit,onRemove}){
   const hue=(item.name.charCodeAt(0)*37+(item.name.charCodeAt(item.name.length-1)||0)*17)%360;
   const initials=item.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
   const ferias=item.feriasIni&&item.feriasFim?`${item.feriasIni} → ${item.feriasFim} (${item.feriasDias||0}d)`:null;
+  const emFerias=isOnFerias(item.feriasIni,item.feriasFim);
   return(
-    <div style={{background:SUR,border:`1px solid ${expanded?Y+"55":BDR}`,borderRadius:16,padding:18,display:"flex",flexDirection:"column",gap:10,transition:"border-color 0.2s"}}>
+    <div style={{background:emFerias?"#0A1A10":SUR,border:`1px solid ${emFerias?"#3EC97A55":expanded?Y+"55":BDR}`,borderRadius:16,padding:18,display:"flex",flexDirection:"column",gap:10,transition:"border-color 0.2s",animation:emFerias?"feriasPulse 2.5s ease-in-out infinite":undefined}}>
       <div style={{display:"flex",alignItems:"center",gap:12}}>
         <div style={{position:"relative",flexShrink:0}}>
-          <div onClick={()=>setShowInfo(s=>!s)} style={{width:40,height:40,borderRadius:"50%",background:SUR2,border:`1.5px solid ${showInfo?Y:BDR}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:600,color:showInfo?Y:TXT,cursor:"pointer",transition:"all 0.2s"}}>{initials}</div>
+          <div onClick={()=>setShowInfo(s=>!s)} style={{width:40,height:40,borderRadius:"50%",background:emFerias?"#003A1E":SUR2,border:`1.5px solid ${emFerias?"#3EC97A":showInfo?Y:BDR}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:emFerias?15:13,fontWeight:600,color:emFerias?"#3EC97A":showInfo?Y:TXT,cursor:"pointer",transition:"all 0.2s"}}>
+            {emFerias?<span style={{animation:"feriasWave 1s ease-in-out infinite",display:"inline-block"}}>🏖</span>:initials}
+          </div>
           {showInfo&&<InfoTooltip values={{...item,admissao:item.admissao}} ferias={ferias} onClose={()=>setShowInfo(false)}/>}
         </div>
         <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:13,fontWeight:500,color:TXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.name}</div>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+            <span style={{fontSize:13,fontWeight:500,color:TXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.name}</span>
+            {emFerias&&<span style={{fontSize:10,fontWeight:600,backgroundImage:"linear-gradient(90deg,#3EC97A,#7FFFBF,#3EC97A)",backgroundSize:"200% auto",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"feriasShimmer 3s linear infinite",flexShrink:0}}>Férias</span>}
+          </div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:3}}>
             {item.re&&<span style={{fontSize:10,color:TXM}}>RE {item.re}</span>}
             {item.area&&<span style={{fontSize:10,background:SUR2,color:TXM,borderRadius:4,padding:"1px 5px"}}>{item.area}</span>}
             {item.escala&&<span style={{fontSize:10,background:"#1A2000",color:"#8ED64A",borderRadius:4,padding:"1px 5px"}}>Esc {item.escala}</span>}
           </div>
           {tempoDeCasa(item.admissao)&&<div style={{fontSize:10,color:TXM,marginTop:2}}>🕐 {tempoDeCasa(item.admissao)}</div>}
-          {ferias&&<div style={{fontSize:10,color:"#3EC9C4",marginTop:2}}>🏖 Férias: {ferias}</div>}
+          {ferias&&!emFerias&&<div style={{fontSize:10,color:"#3EC9C4",marginTop:2}}>🏖 Férias: {ferias}</div>}
         </div>
       </div>
       {expanded&&(
