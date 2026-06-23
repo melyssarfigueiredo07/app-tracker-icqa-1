@@ -219,9 +219,12 @@ function AdminModal({versoes,editors,verCads,onSetVerCad,onSetEditors,onAddVersa
   const [newVer,setNewVer]=useState("");
   const [err,setErr]=useState("");
   const [cadEdit,setCadEdit]=useState({});
+  const [accessLog,setAccessLog]=useState(()=>JSON.parse(localStorage.getItem("icqa2_access_log")||"[]"));
   const cur=editors[selVer]||[];
   function addEd(){const n=newEd.trim();if(!n)return;if(cur.includes(n)){setErr("Já tem acesso.");return;}onSetEditors(selVer,[...cur,n]);setNewEd("");setErr("");}
   function addVer(){const v=newVer.trim().toUpperCase();if(!v)return;if(versoes.includes(v)){setErr("Já existe.");return;}onAddVersao(v);setNewVer("");setErr("");}
+  function clearLog(){localStorage.removeItem("icqa2_access_log");setAccessLog([]);}
+  function fmtDate(iso){try{const d=new Date(iso);return d.toLocaleDateString("pt-BR")+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});}catch{return iso;}}
   return(
     <ModalWrap onClose={onClose} width={500}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
@@ -232,12 +235,12 @@ function AdminModal({versoes,editors,verCads,onSetVerCad,onSetEditors,onAddVersa
         <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:TXM}}>×</button>
       </div>
       <div style={{display:"flex",borderBottom:`1px solid ${BDR}`,marginBottom:18}}>
-        {["editors","versoes"].map(t=>(
+        {[["editors","Editores"],["versoes","Versões"],["historico","Histórico"]].map(([t,label])=>(
           <button key={t} onClick={()=>{setTab(t);setErr("");}}
-            style={{padding:"8px 20px",border:"none",cursor:"pointer",fontSize:13,
+            style={{padding:"8px 16px",border:"none",cursor:"pointer",fontSize:13,
               borderBottom:tab===t?`2px solid ${Y}`:"2px solid transparent",
               background:"none",color:tab===t?Y:TXM,fontWeight:tab===t?500:400}}>
-            {t==="editors"?"Editores por Versão":"Gerenciar Versões"}
+            {label}
           </button>
         ))}
       </div>
@@ -312,6 +315,34 @@ function AdminModal({versoes,editors,verCads,onSetVerCad,onSetEditors,onAddVersa
                 style={{padding:"8px 16px",borderRadius:8,border:"none",background:Y,color:"#000",cursor:"pointer",fontSize:13,fontWeight:500}}>+ Adicionar</button>
             </div>
           </div>
+        </div>
+      )}
+      {tab==="historico"&&(
+        <div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <div style={{fontSize:13,color:TXM}}>{accessLog.length} acesso{accessLog.length!==1?"s":""} registrado{accessLog.length!==1?"s":""}</div>
+            {accessLog.length>0&&(
+              <button onClick={clearLog} style={{padding:"4px 12px",borderRadius:7,border:"1px solid #3A0D1A",background:"none",cursor:"pointer",fontSize:12,color:"#E05C7A"}}>Limpar</button>
+            )}
+          </div>
+          {accessLog.length===0?(
+            <div style={{textAlign:"center",padding:24,color:TXM,fontSize:13,background:SUR,borderRadius:10}}>Nenhum acesso registrado ainda.</div>
+          ):(
+            <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:340,overflowY:"auto"}}>
+              {accessLog.map((entry,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:12,background:SUR,borderRadius:10,padding:"10px 14px",border:`1px solid ${BDR}`}}>
+                  <div style={{width:34,height:34,borderRadius:"50%",background:"#1A1400",border:`1px solid ${Y}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:Y,flexShrink:0}}>
+                    {entry.name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase()}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,color:TXT,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{entry.name}</div>
+                    <div style={{fontSize:11,color:TXM,marginTop:1}}>CAD: <span style={{color:"#3EC97A"}}>{entry.cad}</span></div>
+                  </div>
+                  <div style={{fontSize:11,color:TXM,textAlign:"right",flexShrink:0}}>{fmtDate(entry.at)}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
       <div style={{display:"flex",justifyContent:"flex-end",marginTop:22}}>
@@ -1075,6 +1106,10 @@ export default function App(){
       sessionStorage.setItem("icqa_ident","1");
       sessionStorage.setItem("icqa_ident_name",n);
       sessionStorage.setItem("icqa_ident_cad",c);
+      // log access
+      const prev=JSON.parse(localStorage.getItem("icqa2_access_log")||"[]");
+      prev.unshift({name:n,cad:c.toUpperCase(),at:new Date().toISOString()});
+      localStorage.setItem("icqa2_access_log",JSON.stringify(prev.slice(0,500)));
       setShowIdent(false);
     };
     return(
