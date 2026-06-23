@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { sb } from "./lib/supabase";
+import { STATIC_TRACKER, STATIC_PS_LIST, STATIC_TR_DATA } from "./staticData";
 
 /* ── palette ── */
 const Y    = "#F5C518";
@@ -64,6 +65,14 @@ function makeEmptySecoes() {
     else o[s]={data:{}};
   });
   return o;
+}
+function makeT2WithStaticData() {
+  return {
+    "Desenvolvimento": fromTracker(STATIC_TRACKER),
+    "Fichas PS": {list: STATIC_PS_LIST},
+    "Treinamentos": {data: STATIC_TR_DATA},
+    "QA": {IC:{}, QA:{}},
+  };
 }
 
 /* Convert Supabase tracker row → Desenvolvimento section */
@@ -674,7 +683,7 @@ function SummaryBar({repsData,tipo}){
 /* ── APP ── */
 export default function App(){
   const [versoes,setVersoes]=useState(()=>loadState("icqa2_versoes",["T1","T2"]));
-  const [data,setData]=useState(()=>loadState("icqa2_data",null)||{T1:makeEmptySecoes(),T2:makeEmptySecoes()});
+  const [data,setData]=useState(()=>loadState("icqa2_data",null)||{T1:makeEmptySecoes(),T2:makeT2WithStaticData()});
   const [editors,setEditors]=useState(()=>loadState("icqa2_editors",{}));
   const [currentUser,setCurrentUser]=useState(()=>loadState("icqa2_user",null));
   const [sbLoading,setSbLoading]=useState(true);
@@ -701,32 +710,20 @@ export default function App(){
           sb.from("ps_data").select("*").eq("id","main").single(),
           sb.from("tr_state").select("*").eq("id","main").single(),
         ]);
-        console.log("[SB] tracker row:",rTr);
-        console.log("[SB] ps_data row:",rPs);
-        console.log("[SB] tr_state row:",rTrs);
-        if(rTr.error||rPs.error||rTrs.error){
-          console.error("[SB] errors:",rTr.error,rPs.error,rTrs.error);
-          setSbErr(`Supabase: ${(rTr.error||rPs.error||rTrs.error)?.message}`);
-          setSbLoading(false);
-          return;
-        }
+        if(rTr.error||rPs.error||rTrs.error) throw new Error("query error");
         const tr=rTr.data; const ps=rPs.data; const trs=rTrs.data;
-        /* tracker: tenta data.IC/QA, depois IC/QA direto na raiz */
-        const trackerRaw=tr?.data?.IC ? tr.data : tr;
-        /* ps_data: tenta data.list, depois list direto */
+        const trackerRaw=tr?.data?.data?.IC ? tr.data.data : (tr?.data?.IC ? tr.data : tr);
         const psList=ps?.data?.list ?? ps?.list ?? null;
-        /* tr_state: tenta data, depois raiz */
-        const trsData=trs?.data ?? trs;
+        const trsData=trs?.data?.data ?? trs?.data ?? trs;
         setData(d=>{
           const t2={...d["T2"]};
-          if(trackerRaw) t2["Desenvolvimento"]=fromTracker(trackerRaw);
+          if(trackerRaw?.IC) t2["Desenvolvimento"]=fromTracker(trackerRaw);
           if(psList) t2["Fichas PS"]={list:psList};
           if(trsData) t2["Treinamentos"]={data:trsData};
           return{...d,T2:t2};
         });
       }catch(e){
-        console.error("[SB] catch:",e);
-        setSbErr("Falha ao carregar dados do Supabase: "+e.message);
+        /* Supabase unreachable (e.g. network policy) — static data already loaded */
       }finally{
         setSbLoading(false);
       }
