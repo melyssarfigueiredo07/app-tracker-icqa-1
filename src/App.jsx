@@ -134,8 +134,9 @@ function avg(vals) {
   if (!vals.length) return 0;
   return Math.round(vals.reduce((s,v)=>s+v,0)/vals.length);
 }
-function repAvg(rep, tipo) {
-  return avg(TAREFAS[tipo].map(t => rep[t] ?? 0));
+function repAvg(rep, tipo, taskList) {
+  const ts=taskList||TAREFAS[tipo]||[];
+  return avg(ts.map(t => rep[t] ?? 0));
 }
 function loadState(key, fb) {
   try { const r=localStorage.getItem(key); return r?JSON.parse(r):fb; } catch { return fb; }
@@ -444,11 +445,12 @@ function AddRepModal({versao,secao,tipo,onAdd,onClose}){
 }
 
 /* ── IMPORT CSV MODAL ── */
-function ImportModal({versao,secao,tipo,onImport,onClose}){
+function ImportModal({versao,secao,tipo,onImport,onClose,taskList}){
   const [step,setStep]=useState("upload");
   const [headers,setHeaders]=useState([]);
   const [rows,setRows]=useState([]);
-  const [map,setMap]=useState({rep:"",...Object.fromEntries(TAREFAS[tipo].map(t=>[t,""]))});
+  const taskArr=taskList||TAREFAS[tipo]||[];
+  const [map,setMap]=useState({rep:"",...Object.fromEntries(taskArr.map(t=>[t,""]))});
   const [preview,setPreview]=useState([]);
   const [err,setErr]=useState("");
   const fileRef=useRef();
@@ -460,7 +462,7 @@ function ImportModal({versao,secao,tipo,onImport,onClose}){
     setErr("");
     if(!f.name.endsWith(".csv")){setErr("Use .csv");return;}
     const r=new FileReader();
-    r.onload=e=>{try{const{heads,data}=parseCSV(e.target.result);setHeaders(heads);setRows(data);setMap({rep:heads[0]||"",...Object.fromEntries(TAREFAS[tipo].map(t=>[t,""]))});setStep("map");}catch{setErr("Erro ao ler CSV.");}};
+    r.onload=e=>{try{const{heads,data}=parseCSV(e.target.result);setHeaders(heads);setRows(data);setMap({rep:heads[0]||"",...Object.fromEntries(taskArr.map(t=>[t,""]))});setStep("map");}catch{setErr("Erro ao ler CSV.");}};
     r.readAsText(f);
   }
   function buildPreview(){
@@ -470,7 +472,7 @@ function ImportModal({versao,secao,tipo,onImport,onClose}){
       const name=row[headers.indexOf(map.rep)]?.trim();
       if(!name)return;
       const vals={};
-      TAREFAS[tipo].forEach(t=>{const raw=map[t]?row[headers.indexOf(map[t])]:"";const n=parseFloat(raw);vals[t]=isNaN(n)?0:Math.min(100,Math.max(0,Math.round(n)));});
+      taskArr.forEach(t=>{const raw=map[t]?row[headers.indexOf(map[t])]:"";const n=parseFloat(raw);vals[t]=isNaN(n)?0:Math.min(100,Math.max(0,Math.round(n)));});
       result.push({name,vals});
     });
     if(!result.length){setErr("Nenhum dado.");return;}
@@ -509,7 +511,7 @@ function ImportModal({versao,secao,tipo,onImport,onClose}){
                 {headers.map(h=><option key={h} value={h}>{h}</option>)}
               </select>
             </div>
-            {TAREFAS[tipo].map(t=>(
+            {taskArr.map(t=>(
               <div key={t} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:SUR,borderRadius:8}}>
                 <div style={{width:8,height:8,borderRadius:2,background:TASK_COLORS[t],flexShrink:0}}/>
                 <span style={{fontSize:13,color:TXT,width:110,flexShrink:0}}>{t}</span>
@@ -535,7 +537,7 @@ function ImportModal({versao,secao,tipo,onImport,onClose}){
               <div key={name} style={{background:SUR,borderRadius:10,padding:"10px 12px",border:`1px solid ${BDR}`}}>
                 <div style={{fontSize:13,fontWeight:500,color:TXT,marginBottom:6}}>{name}</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                  {TAREFAS[tipo].map(t=>(
+                  {taskArr.map(t=>(
                     <span key={t} style={{fontSize:11,background:TASK_DIM[t],color:TASK_COLORS[t],borderRadius:20,padding:"2px 7px"}}>{t}: {vals[t]}%</span>
                   ))}
                 </div>
@@ -610,11 +612,11 @@ function InfoTooltip({values,ferias,onClose}){
   );
 }
 
-function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
+function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit,taskList}){
   const [expanded,setExpanded]=useState(false);
   const [showInfo,setShowInfo]=useState(false);
-  const a=repAvg(values,tipo);
-  const tarefas=TAREFAS[tipo];
+  const tarefas=taskList||TAREFAS[tipo];
+  const a=repAvg(values,tipo,tarefas);
   const initials=rep.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
   const hue=(rep.charCodeAt(0)*37+(rep.charCodeAt(rep.length-1)||0)*17)%360;
 
@@ -914,8 +916,8 @@ function AddTrModal({onAdd,onClose}){
 }
 
 /* ── SUMMARY BAR (performance) ── */
-function SummaryBar({repsData,tipo}){
-  const tarefas=TAREFAS[tipo];
+function SummaryBar({repsData,tipo,taskList}){
+  const tarefas=taskList||TAREFAS[tipo]||[];
   const all=Object.values(repsData);
   const taskAvgs=tarefas.map(t=>({task:t,a:all.length>0?avg(all.map(r=>r[t]??0)):0}));
   const overall=avg(taskAvgs.map(x=>x.a));
@@ -935,6 +937,58 @@ function SummaryBar({repsData,tipo}){
         ))}
       </div>
     </div>
+  );
+}
+
+/* ── TASK MANAGER MODAL ── */
+function TaskManagerModal({tarefas,tipo,onSetTarefas,onClose}){
+  const [newTask,setNewTask]=useState("");
+  const [err,setErr]=useState("");
+  const list=tarefas[tipo]||[];
+  function addTask(){
+    const t=newTask.trim().toUpperCase();
+    if(!t){setErr("Digite o nome da tarefa.");return;}
+    if(list.includes(t)){setErr("Tarefa já existe.");return;}
+    onSetTarefas({...tarefas,[tipo]:[...list,t]});
+    setNewTask("");setErr("");
+  }
+  function removeTask(t){onSetTarefas({...tarefas,[tipo]:list.filter(x=>x!==t)});}
+  return(
+    <ModalWrap onClose={onClose} width={420}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <div>
+          <div style={{fontSize:16,fontWeight:500,color:TXT}}>Tarefas — {tipo}</div>
+          <div style={{fontSize:12,color:TXM,marginTop:2}}>Adicione ou remova tarefas desta guia</div>
+        </div>
+        <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:TXM}}>×</button>
+      </div>
+      {err&&<div style={{background:"var(--err-bg)",color:"var(--err-txt)",borderRadius:8,padding:"9px 13px",fontSize:13,marginBottom:14}}>{err}</div>}
+      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16,maxHeight:260,overflowY:"auto"}}>
+        {list.length===0&&<div style={{textAlign:"center",padding:16,color:TXM,fontSize:13}}>Nenhuma tarefa cadastrada.</div>}
+        {list.map(t=>(
+          <div key={t} style={{display:"flex",alignItems:"center",gap:10,background:SUR2,borderRadius:10,padding:"10px 14px",border:`1px solid ${BDR}`}}>
+            <div style={{width:10,height:10,borderRadius:"50%",background:TASK_COLORS[t]||"#888",flexShrink:0}}/>
+            <div style={{flex:1,fontSize:13,color:TXT,fontWeight:500}}>{t}</div>
+            <button onClick={()=>removeTask(t)}
+              style={{padding:"4px 10px",borderRadius:7,border:"1px solid var(--err-bg)",background:"none",cursor:"pointer",fontSize:12,color:"var(--err-txt)"}}>Remover</button>
+          </div>
+        ))}
+      </div>
+      <div style={{borderTop:`1px solid ${BDR}`,paddingTop:14}}>
+        <div style={{fontSize:13,color:TXM,marginBottom:8}}>Nova tarefa</div>
+        <div style={{display:"flex",gap:8}}>
+          <input type="text" placeholder="Ex: CONFERÊNCIA" value={newTask}
+            onChange={e=>setNewTask(e.target.value)}
+            onKeyDown={e=>{if(e.key==="Enter")addTask();}}
+            style={{flex:1,background:SUR,border:`1px solid ${BDR}`,color:TXT,borderRadius:8,padding:"8px 12px",fontSize:13,outline:"none"}}/>
+          <button onClick={addTask}
+            style={{padding:"8px 16px",borderRadius:8,border:"none",background:"var(--y)",color:"#000",cursor:"pointer",fontSize:13,fontWeight:500}}>+ Adicionar</button>
+        </div>
+      </div>
+      <div style={{display:"flex",justifyContent:"flex-end",marginTop:20}}>
+        <button onClick={onClose} style={{padding:"8px 22px",borderRadius:8,border:"none",background:"var(--y)",color:"#000",cursor:"pointer",fontSize:14,fontWeight:500}}>Fechar</button>
+      </div>
+    </ModalWrap>
   );
 }
 
@@ -960,11 +1014,13 @@ export default function App(){
   const [activeSec,setActiveSec]=useState(SECOES[0]);
   const [activeTipo,setActiveTipo]=useState("IC");
   const [search,setSearch]=useState("");
+  const [tarefas,setTarefas]=useState(()=>loadState("icqa2_tarefas",{IC:[...TAREFAS.IC],QA:[...TAREFAS.QA]}));
   const [showLogin,setShowLogin]=useState(false);
   const [showAdmin,setShowAdmin]=useState(false);
   const [showAdd,setShowAdd]=useState(false);
   const [showImport,setShowImport]=useState(false);
   const [showAddTr,setShowAddTr]=useState(false);
+  const [showTaskMgr,setShowTaskMgr]=useState(false);
   /* Show turno/CAD picker on every fresh page load (sessionStorage resets on tab close) */
   const [showPicker,setShowPicker]=useState(()=>!sessionStorage.getItem("icqa_picked"));
   const [showIdent,setShowIdent]=useState(()=>!sessionStorage.getItem("icqa_ident"));
@@ -1008,6 +1064,7 @@ export default function App(){
   useEffect(()=>{saveState("icqa2_editors",editors);},[editors]);
   useEffect(()=>{saveState("icqa2_user",currentUser);},[currentUser]);
   useEffect(()=>{saveState("icqa2_vercads",verCads);},[verCads]);
+  useEffect(()=>{saveState("icqa2_tarefas",tarefas);},[tarefas]);
   useEffect(()=>{
     localStorage.setItem("icqa2_theme",theme);
     document.documentElement.setAttribute("data-theme",theme);
@@ -1036,8 +1093,8 @@ export default function App(){
     if(activeVer!=="T2") return;
     try{
       const payload={IC:newData["IC"]||{},QA:newData["QA"]||{},
-        tarefasStd:TAREFAS.IC,tarefasQA:TAREFAS.QA,
-        tarefasPorTurno:{IC:TAREFAS.IC,QA:TAREFAS.QA},
+        tarefasStd:tarefas.IC,tarefasQA:tarefas.QA,
+        tarefasPorTurno:{IC:tarefas.IC,QA:tarefas.QA},
         turnos:["IC","QA"],qaSheets:["QA"],updated_at:Date.now()};
       await sb.from("tracker").update({data:payload}).eq("id","main");
     }catch{}
@@ -1075,7 +1132,7 @@ export default function App(){
   const handleAdd=useCallback((ver,sec,tipo,name,extra={})=>{
     setData(d=>{
       if(d?.[ver]?.[sec]?.[tipo]?.[name]) return d;
-      const tasks=Object.fromEntries(TAREFAS[tipo].map(t=>[t,0]));
+      const tasks=Object.fromEntries((tarefas[tipo]||[]).map(t=>[t,0]));
       const vals={re:"",cpf:"",ldap:"",cargo:"",escala:"",admissao:"",contEmer:"",endereco:"",telefone:"",feriasFim:"",feriasIni:"",feriasDias:0,...extra,...tasks};
       const updated={...d,[ver]:{...d[ver],[sec]:{...d[ver][sec],[tipo]:{...d[ver][sec][tipo],[name]:vals}}}};
       if(ver==="T2"&&sec==="Desenvolvimento") saveTrackerToSb(updated["T2"]["Desenvolvimento"]);
@@ -1169,6 +1226,15 @@ export default function App(){
       const prev=JSON.parse(localStorage.getItem("icqa2_access_log")||"[]");
       prev.unshift({name:n,cad:c.toUpperCase(),at:new Date().toISOString()});
       localStorage.setItem("icqa2_access_log",JSON.stringify(prev.slice(0,500)));
+      // auto-restore last turno if valid
+      const lastTurno=localStorage.getItem("icqa2_last_turno");
+      if(lastTurno&&versoes.includes(lastTurno)){
+        setActiveVer(lastTurno);
+        sessionStorage.setItem("icqa_picked","1");
+        setShowIdent(false);
+        // showPicker stays false — go straight to app
+        return;
+      }
       setShowIdent(false);
     };
     const ready=identName.trim()&&identCad.trim();
@@ -1241,6 +1307,7 @@ export default function App(){
     const pickTurno=(v)=>{
       setActiveVer(v);
       sessionStorage.setItem("icqa_picked","1");
+      localStorage.setItem("icqa2_last_turno",v);
       setShowPicker(false);
     };
     return(
@@ -1372,16 +1439,23 @@ export default function App(){
 
         {/* IC/QA PILLS — only for performance sections */}
         {secTipo==="performance"&&(
-          <div style={{display:"flex",gap:6,marginBottom:16}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:16}}>
             {REP_TIPOS.map(t=>(
               <button key={t} onClick={()=>{setActiveTipo(t);setSearch("");}}
                 style={{padding:"6px 18px",borderRadius:20,cursor:"pointer",fontSize:13,fontWeight:500,
-                  border:activeTipo===t?`1px solid ${Y}`:`1px solid ${BDR}`,
-                  background:activeTipo===t?"#1A1400":"none",color:activeTipo===t?Y:TXM,transition:"all 0.2s"}}>
+                  border:activeTipo===t?`1px solid #F5C518`:`1px solid ${BDR}`,
+                  background:activeTipo===t?"var(--turno-icon-bg)":"none",color:activeTipo===t?Y:TXM,transition:"all 0.2s"}}>
                 {t}
                 <span style={{marginLeft:6,fontSize:11,opacity:0.8}}>{countTipo(activeVer,activeSec,t)}</span>
               </button>
             ))}
+            {canEdit&&(
+              <button onClick={()=>setShowTaskMgr(true)} title="Gerenciar tarefas"
+                style={{marginLeft:8,padding:"5px 12px",borderRadius:20,cursor:"pointer",fontSize:11,fontWeight:500,
+                  border:`1px solid ${BDR}`,background:"none",color:TXM,display:"flex",alignItems:"center",gap:4}}>
+                ⚙ Tarefas
+              </button>
+            )}
           </div>
         )}
 
@@ -1417,7 +1491,7 @@ export default function App(){
         {/* ── PERFORMANCE SECTION ── */}
         {secTipo==="performance"&&(
           <>
-            <SummaryBar repsData={repsData} tipo={activeTipo}/>
+            <SummaryBar repsData={repsData} tipo={activeTipo} taskList={tarefas[activeTipo]}/>
             {repList.length===0?(
               <div style={{textAlign:"center",padding:"48px 0",color:TXM,fontSize:14}}>
                 {search?"Nenhum rep encontrado.":`Nenhum rep em ${activeVer}/${activeSec}/${activeTipo}.${canEdit?" Adicione ou importe CSV.":""}`}
@@ -1428,7 +1502,7 @@ export default function App(){
                   <RepCard key={rep} rep={rep} values={repsData[rep]} tipo={activeTipo}
                     onUpdate={(r,vals)=>handleUpdate(activeVer,activeSec,activeTipo,r,vals)}
                     onRemove={r=>handleRemove(activeVer,activeSec,activeTipo,r)}
-                    canEdit={canEdit}/>
+                    canEdit={canEdit} taskList={tarefas[activeTipo]}/>
                 ))}
               </div>
             )}
@@ -1530,12 +1604,16 @@ export default function App(){
           onClose={()=>setShowAdd(false)}/>
       )}
       {showImport&&canEdit&&secTipo==="performance"&&(
-        <ImportModal versao={activeVer} secao={activeSec} tipo={activeTipo}
+        <ImportModal versao={activeVer} secao={activeSec} tipo={activeTipo} taskList={tarefas[activeTipo]}
           onImport={records=>handleImport(activeVer,activeSec,activeTipo,records)}
           onClose={()=>setShowImport(false)}/>
       )}
       {showAddTr&&canEdit&&(
         <AddTrModal onAdd={handleTrAddPerson} onClose={()=>setShowAddTr(false)}/>
+      )}
+      {showTaskMgr&&canEdit&&secTipo==="performance"&&(
+        <TaskManagerModal tarefas={tarefas} tipo={activeTipo}
+          onSetTarefas={setTarefas} onClose={()=>setShowTaskMgr(false)}/>
       )}
     </div>
   );
