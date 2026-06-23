@@ -884,6 +884,9 @@ export default function App(){
   const [showAddTr,setShowAddTr]=useState(false);
   /* Show turno/CAD picker on every fresh page load (sessionStorage resets on tab close) */
   const [showPicker,setShowPicker]=useState(()=>!sessionStorage.getItem("icqa_picked"));
+  const [showIdent,setShowIdent]=useState(()=>!sessionStorage.getItem("icqa_ident"));
+  const [identName,setIdentName]=useState(()=>sessionStorage.getItem("icqa_ident_name")||"");
+  const [identCad,setIdentCad]=useState(()=>sessionStorage.getItem("icqa_ident_cad")||"");
 
   /* Load from Supabase on mount */
   useEffect(()=>{
@@ -1062,6 +1065,56 @@ export default function App(){
 
   const fichaList=(secData.list||[]).filter(x=>x.name?.toLowerCase().includes(search.toLowerCase()));
   const trList=Object.entries(secData.data||{}).filter(([,p])=>p.name?.toLowerCase().includes(search.toLowerCase()));
+
+  /* ── IDENTIFICATION SCREEN ── */
+  if(showIdent){
+    const handleIdentSubmit=()=>{
+      const n=identName.trim();
+      const c=identCad.trim();
+      if(!n||!c) return;
+      sessionStorage.setItem("icqa_ident","1");
+      sessionStorage.setItem("icqa_ident_name",n);
+      sessionStorage.setItem("icqa_ident_cad",c);
+      setShowIdent(false);
+    };
+    return(
+      <div style={{minHeight:"100vh",background:"#0D0D0D",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+        <div style={{background:"#1A1A1A",border:"1px solid #333",borderRadius:16,padding:40,width:"100%",maxWidth:380,display:"flex",flexDirection:"column",gap:24}}>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:32,fontWeight:800,color:"#F5C518",letterSpacing:2,marginBottom:4}}>ICQA</div>
+            <div style={{color:"#888",fontSize:14}}>Identifique-se para continuar</div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:16}}>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              <label style={{color:"#aaa",fontSize:12,fontWeight:600,letterSpacing:1}}>NOME</label>
+              <input
+                value={identName}
+                onChange={e=>setIdentName(e.target.value)}
+                onKeyDown={e=>e.key==="Enter"&&handleIdentSubmit()}
+                placeholder="Seu nome completo"
+                style={{background:"#111",border:"1px solid #444",borderRadius:8,padding:"10px 14px",color:"#fff",fontSize:15,outline:"none"}}
+              />
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              <label style={{color:"#aaa",fontSize:12,fontWeight:600,letterSpacing:1}}>CAD</label>
+              <input
+                value={identCad}
+                onChange={e=>setIdentCad(e.target.value)}
+                onKeyDown={e=>e.key==="Enter"&&handleIdentSubmit()}
+                placeholder="Ex: BRRJ1"
+                style={{background:"#111",border:"1px solid #444",borderRadius:8,padding:"10px 14px",color:"#fff",fontSize:15,outline:"none",textTransform:"uppercase"}}
+              />
+            </div>
+          </div>
+          <button
+            onClick={handleIdentSubmit}
+            disabled={!identName.trim()||!identCad.trim()}
+            style={{background:(!identName.trim()||!identCad.trim())?"#2A2A2A":"#F5C518",color:(!identName.trim()||!identCad.trim())?"#555":"#111",border:"none",borderRadius:10,padding:"12px 0",fontSize:16,fontWeight:700,cursor:(!identName.trim()||!identCad.trim())?"not-allowed":"pointer",transition:"all .2s"}}
+          >Entrar</button>
+        </div>
+      </div>
+    );
+  }
 
   /* ── CAD / TURNO PICKER ── */
   if(showPicker){
