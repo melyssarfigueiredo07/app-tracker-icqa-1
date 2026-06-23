@@ -902,7 +902,7 @@ export default function App(){
   const secTipo=SECAO_TIPO[activeSec];
   const secData=data?.[activeVer]?.[activeSec]||{};
   const repsData=secTipo==="performance"?(secData[activeTipo]||{}):{};
-  const repList=Object.keys(repsData).filter(r=>r.toLowerCase().includes(search.toLowerCase()));
+  const repList=Object.keys(repsData).filter(r=>r.toLowerCase().includes(search.toLowerCase())).sort((a,b)=>a.localeCompare(b,"pt-BR"));
 
   /* Save Desenvolvimento to Supabase */
   const saveTrackerToSb=useCallback(async(newData)=>{
