@@ -176,12 +176,13 @@ function LoginModal({onLogin,onClose}){
 }
 
 /* ── ADMIN MODAL ── */
-function AdminModal({versoes,editors,onSetEditors,onAddVersao,onRemoveVersao,onClose}){
+function AdminModal({versoes,editors,verCads,onSetVerCad,onSetEditors,onAddVersao,onRemoveVersao,onClose}){
   const [tab,setTab]=useState("editors");
   const [selVer,setSelVer]=useState(versoes[0]||"");
   const [newEd,setNewEd]=useState("");
   const [newVer,setNewVer]=useState("");
   const [err,setErr]=useState("");
+  const [cadEdit,setCadEdit]=useState({});
   const cur=editors[selVer]||[];
   function addEd(){const n=newEd.trim();if(!n)return;if(cur.includes(n)){setErr("Já tem acesso.");return;}onSetEditors(selVer,[...cur,n]);setNewEd("");setErr("");}
   function addVer(){const v=newVer.trim().toUpperCase();if(!v)return;if(versoes.includes(v)){setErr("Já existe.");return;}onAddVersao(v);setNewVer("");setErr("");}
@@ -247,12 +248,21 @@ function AdminModal({versoes,editors,onSetEditors,onAddVersao,onRemoveVersao,onC
         <div>
           <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
             {versoes.map(v=>(
-              <div key={v} style={{display:"flex",alignItems:"center",gap:10,background:SUR,borderRadius:10,padding:"10px 14px",border:`1px solid ${BDR}`}}>
-                <span style={{flex:1,fontSize:14,color:TXT,fontWeight:500}}>{v}</span>
-                {versoes.length>1&&(
-                  <button onClick={()=>onRemoveVersao(v)}
-                    style={{padding:"4px 10px",borderRadius:7,border:"1px solid #3A0D1A",background:"none",cursor:"pointer",fontSize:12,color:"#E05C7A"}}>Remover</button>
-                )}
+              <div key={v} style={{display:"flex",flexDirection:"column",gap:8,background:SUR,borderRadius:10,padding:"12px 14px",border:`1px solid ${BDR}`}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <span style={{flex:1,fontSize:14,color:TXT,fontWeight:500}}>{v}</span>
+                  {verCads[v]&&<span style={{fontSize:11,background:"#003A1E",color:"#3EC97A",borderRadius:20,padding:"2px 8px"}}>{verCads[v]}</span>}
+                  {versoes.length>1&&(
+                    <button onClick={()=>onRemoveVersao(v)}
+                      style={{padding:"4px 10px",borderRadius:7,border:"1px solid #3A0D1A",background:"none",cursor:"pointer",fontSize:12,color:"#E05C7A"}}>Remover</button>
+                  )}
+                </div>
+                <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                  <input type="text" placeholder="CAD (ex: BRRJ1)" value={cadEdit[v]??verCads[v]??""} onChange={e=>setCadEdit(c=>({...c,[v]:e.target.value}))}
+                    style={{flex:1,background:SUR2,border:`1px solid ${BDR}`,color:TXT,borderRadius:7,padding:"6px 10px",fontSize:12,outline:"none"}}/>
+                  <button onClick={()=>{onSetVerCad(v,cadEdit[v]??verCads[v]??"");setCadEdit(c=>({...c,[v]:undefined}));}}
+                    style={{padding:"6px 12px",borderRadius:7,border:"none",background:Y,color:"#000",cursor:"pointer",fontSize:12,fontWeight:500}}>Salvar CAD</button>
+                </div>
               </div>
             ))}
           </div>
@@ -689,6 +699,7 @@ export default function App(){
     return{...base,T2:makeT2WithStaticData()};
   });
   const [editors,setEditors]=useState(()=>loadState("icqa2_editors",{}));
+  const [verCads,setVerCads]=useState(()=>loadState("icqa2_vercads",{}));
   const [currentUser,setCurrentUser]=useState(()=>loadState("icqa2_user",null));
   const [sbLoading,setSbLoading]=useState(true);
   const [sbErr,setSbErr]=useState(null);
@@ -740,9 +751,18 @@ export default function App(){
   useEffect(()=>{saveState("icqa2_data",data);},[data]);
   useEffect(()=>{saveState("icqa2_editors",editors);},[editors]);
   useEffect(()=>{saveState("icqa2_user",currentUser);},[currentUser]);
+  useEffect(()=>{saveState("icqa2_vercads",verCads);},[verCads]);
+
+  useEffect(()=>{
+    if(!currentUser||currentUser.isCreator) return;
+    const myVer=versoes.find(v=>(editors[v]||[]).includes(currentUser.name));
+    if(myVer) setActiveVer(myVer);
+  },[currentUser]);
 
   const isCreator=currentUser?.isCreator===true;
   const canEdit=isCreator||(currentUser&&(editors[activeVer]||[]).includes(currentUser.name));
+  // Editor only sees their assigned versão; creator sees all
+  const visibleVersoes=isCreator ? versoes : versoes.filter(v=>(editors[v]||[]).includes(currentUser?.name));
 
   const secTipo=SECAO_TIPO[activeSec];
   const secData=data?.[activeVer]?.[activeSec]||{};
@@ -902,10 +922,11 @@ export default function App(){
       <div style={{borderBottom:`1px solid ${BDR}`,padding:"0 24px",display:"flex",alignItems:"center",background:"#111"}}>
         <div style={{fontSize:11,color:TXM,marginRight:14,letterSpacing:"0.5px",textTransform:"uppercase",flexShrink:0}}>Turno</div>
         <div style={{display:"flex",flex:1,overflowX:"auto"}}>
-          {versoes.map(v=>(
+          {visibleVersoes.map(v=>(
             <button key={v} onClick={()=>{setActiveVer(v);setSearch("");}}
               style={{...tabStyle(activeVer===v),display:"flex",alignItems:"center",gap:6}}>
-              {v}
+              <span>{v}</span>
+              {verCads[v]&&<span style={{fontSize:10,color:activeVer===v?Y:TXM,opacity:0.8}}>{verCads[v]}</span>}
               <span style={{fontSize:10,borderRadius:4,padding:"1px 5px",fontWeight:600,
                 background:activeVer===v?"#1A1400":SUR,color:activeVer===v?Y:TXM,
                 border:`1px solid ${activeVer===v?Y+"44":BDR}`}}>
@@ -1057,7 +1078,8 @@ export default function App(){
       {/* MODALS */}
       {showLogin&&<LoginModal onLogin={setCurrentUser} onClose={()=>setShowLogin(false)}/>}
       {showAdmin&&isCreator&&(
-        <AdminModal versoes={versoes} editors={editors}
+        <AdminModal versoes={versoes} editors={editors} verCads={verCads}
+          onSetVerCad={(ver,cad)=>setVerCads(c=>({...c,[ver]:cad}))}
           onSetEditors={handleSetEditors} onAddVersao={handleAddVersao}
           onRemoveVersao={handleRemoveVersao} onClose={()=>setShowAdmin(false)}/>
       )}
