@@ -1068,8 +1068,17 @@ export default function App(){
   const [versoes,setVersoes]=useState(()=>loadState("icqa2_versoes",["T1","T2"]));
   const [data,setData]=useState(()=>{
     const stored=loadState("icqa2_data",null);
-    const base=stored||{T1:makeEmptySecoes(),T2:makeT2WithStaticData()};
-    return{...base,T2:makeT2WithStaticData()};
+    if(!stored) return{T1:makeEmptySecoes(),T2:makeT2WithStaticData()};
+    const base={...stored};
+    if(!base.T2) base.T2=makeT2WithStaticData();
+    else{
+      const t2s=makeT2WithStaticData();
+      Object.keys(t2s).forEach(sec=>{
+        if(!base.T2[sec]) base.T2[sec]=t2s[sec];
+        else if(sec==="Treinamentos"&&Object.keys(base.T2[sec].data||{}).length===0) base.T2[sec]=t2s[sec];
+      });
+    }
+    return base;
   });
   const [editors,setEditors]=useState(()=>loadState("icqa2_editors",{}));
   const [verCads,setVerCads]=useState(()=>loadState("icqa2_vercads",{}));
