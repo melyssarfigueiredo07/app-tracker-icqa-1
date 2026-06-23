@@ -44,6 +44,20 @@ const TASK_DIM = {
 };
 
 /* ── helpers ── */
+function pctColor(v){
+  if(v<=0)  return "#555";
+  if(v<=25) return "#E05C7A";
+  if(v<=50) return "#F0F0F0";
+  if(v<=75) return "#F5C518";
+  return "#3EC97A";
+}
+function pctBg(v){
+  if(v<=0)  return "#1A1A1A";
+  if(v<=25) return "#3A0D1A";
+  if(v<=50) return "#2A2A2A";
+  if(v<=75) return "#3A2E00";
+  return "#003A1E";
+}
 function avg(vals) {
   if (!vals.length) return 0;
   return Math.round(vals.reduce((s,v)=>s+v,0)/vals.length);
@@ -510,7 +524,7 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
     <div style={{background:SUR,border:`1px solid ${expanded?Y+"55":BDR}`,borderRadius:16,padding:18,display:"flex",flexDirection:"column",gap:12,transition:"border-color 0.2s"}}>
       <div style={{display:"flex",alignItems:"center",gap:12}}>
         <div style={{position:"relative",flexShrink:0}}>
-          <div onClick={()=>setShowInfo(s=>!s)} style={{width:40,height:40,borderRadius:"50%",background:`hsla(${hue},60%,18%,1)`,border:`1.5px solid ${showInfo?Y:("hsla("+hue+",60%,45%,0.6)")}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:500,color:`hsl(${hue},80%,75%)`,cursor:"pointer",transition:"border-color 0.2s"}}>{initials}</div>
+          <div onClick={()=>setShowInfo(s=>!s)} style={{width:40,height:40,borderRadius:"50%",background:SUR2,border:`1.5px solid ${showInfo?Y:BDR}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:600,color:showInfo?Y:TXT,cursor:"pointer",transition:"all 0.2s"}}>{initials}</div>
           {showInfo&&<InfoTooltip values={values} ferias={ferias} onClose={()=>setShowInfo(false)}/>}
         </div>
         <div style={{flex:1,minWidth:0}}>
@@ -530,14 +544,15 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
       <div style={{display:"flex",flexDirection:"column",gap:5}}>
         {tarefas.map(t=>{
           const v=values[t]??0;
+          const c=pctColor(v);const bg=pctBg(v);
           return(
             <div key={t} style={{display:"flex",alignItems:"center",gap:8}}>
-              <div style={{width:7,height:7,borderRadius:2,background:TASK_COLORS[t],flexShrink:0}}/>
+              <div style={{width:7,height:7,borderRadius:2,background:c,flexShrink:0}}/>
               <span style={{fontSize:11,color:TXM,width:100,flexShrink:0}}>{t}</span>
-              <div style={{flex:1,height:5,background:TASK_DIM[t],borderRadius:10,overflow:"hidden"}}>
-                <div style={{height:"100%",width:`${v}%`,background:TASK_COLORS[t],borderRadius:10,transition:"width 0.3s"}}/>
+              <div style={{flex:1,height:5,background:bg,borderRadius:10,overflow:"hidden"}}>
+                <div style={{height:"100%",width:`${v}%`,background:c,borderRadius:10,transition:"width 0.3s"}}/>
               </div>
-              <span style={{fontSize:11,fontWeight:500,color:TASK_COLORS[t],width:32,textAlign:"right"}}>{v}%</span>
+              <span style={{fontSize:11,fontWeight:600,color:c,width:32,textAlign:"right"}}>{v}%</span>
             </div>
           );
         })}
@@ -579,19 +594,22 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
             </div>
           </div>
           <div style={{borderTop:`1px solid ${BDR}`,paddingTop:10}}>
-            {tarefas.map(t=>(
+            {tarefas.map(t=>{
+              const ev=values[t]??0; const ec=pctColor(ev);
+              return(
               <div key={t} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                <div style={{width:8,height:8,borderRadius:2,background:TASK_COLORS[t],flexShrink:0}}/>
+                <div style={{width:8,height:8,borderRadius:2,background:ec,flexShrink:0}}/>
                 <span style={{fontSize:12,color:TXT,width:100,flexShrink:0}}>{t}</span>
-                <button onClick={()=>liveUpdate(t,Math.max(0,(values[t]??0)-25))}
+                <button onClick={()=>liveUpdate(t,Math.max(0,ev-25))}
                   style={{width:26,height:26,borderRadius:6,border:`1px solid ${BDR}`,background:SUR2,color:TXM,cursor:"pointer",fontSize:15,lineHeight:1,flexShrink:0}}>−</button>
-                <input type="range" min={0} max={100} step={25} value={values[t]??0} onChange={e=>liveUpdate(t,Number(e.target.value))}
-                  style={{flex:1,accentColor:Y}}/>
-                <button onClick={()=>liveUpdate(t,Math.min(100,(values[t]??0)+25))}
+                <input type="range" min={0} max={100} step={25} value={ev} onChange={e=>liveUpdate(t,Number(e.target.value))}
+                  style={{flex:1,accentColor:ec}}/>
+                <button onClick={()=>liveUpdate(t,Math.min(100,ev+25))}
                   style={{width:26,height:26,borderRadius:6,border:`1px solid ${BDR}`,background:SUR2,color:TXM,cursor:"pointer",fontSize:15,lineHeight:1,flexShrink:0}}>+</button>
-                <span style={{fontSize:12,fontWeight:500,color:Y,width:34,textAlign:"right"}}>{values[t]??0}%</span>
+                <span style={{fontSize:12,fontWeight:600,color:ec,width:34,textAlign:"right"}}>{ev}%</span>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -621,7 +639,7 @@ function FichaCard({item,canEdit,onRemove}){
     <div style={{background:SUR,border:`1px solid ${expanded?Y+"55":BDR}`,borderRadius:16,padding:18,display:"flex",flexDirection:"column",gap:10,transition:"border-color 0.2s"}}>
       <div style={{display:"flex",alignItems:"center",gap:12}}>
         <div style={{position:"relative",flexShrink:0}}>
-          <div onClick={()=>setShowInfo(s=>!s)} style={{width:40,height:40,borderRadius:"50%",background:`hsla(${hue},50%,18%,1)`,border:`1.5px solid ${showInfo?Y:("hsla("+hue+",50%,45%,0.6)")}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:500,color:`hsl(${hue},70%,75%)`,cursor:"pointer",transition:"border-color 0.2s"}}>{initials}</div>
+          <div onClick={()=>setShowInfo(s=>!s)} style={{width:40,height:40,borderRadius:"50%",background:SUR2,border:`1.5px solid ${showInfo?Y:BDR}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:600,color:showInfo?Y:TXT,cursor:"pointer",transition:"all 0.2s"}}>{initials}</div>
           {showInfo&&<InfoTooltip values={{...item,admissao:item.admissao}} ferias={ferias} onClose={()=>setShowInfo(false)}/>}
         </div>
         <div style={{flex:1,minWidth:0}}>
@@ -670,7 +688,7 @@ function TrCard({person,canEdit,onToggle,onRemove}){
     <div style={{background:SUR,border:`1px solid ${expanded?Y+"55":BDR}`,borderRadius:16,padding:18,display:"flex",flexDirection:"column",gap:10,transition:"border-color 0.2s"}}>
       <div style={{display:"flex",alignItems:"center",gap:12}}>
         <div style={{position:"relative",flexShrink:0}}>
-          <div onClick={()=>setShowInfo(s=>!s)} style={{width:40,height:40,borderRadius:"50%",background:`hsla(${hue},50%,18%,1)`,border:`1.5px solid ${showInfo?Y:("hsla("+hue+",50%,45%,0.6)")}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:500,color:`hsl(${hue},70%,75%)`,cursor:"pointer",transition:"border-color 0.2s"}}>{initials}</div>
+          <div onClick={()=>setShowInfo(s=>!s)} style={{width:40,height:40,borderRadius:"50%",background:SUR2,border:`1.5px solid ${showInfo?Y:BDR}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:600,color:showInfo?Y:TXT,cursor:"pointer",transition:"all 0.2s"}}>{initials}</div>
           {showInfo&&<InfoTooltip values={{admissao:person.admission}} ferias={null} onClose={()=>setShowInfo(false)}/>}
         </div>
         <div style={{flex:1,minWidth:0}}>
