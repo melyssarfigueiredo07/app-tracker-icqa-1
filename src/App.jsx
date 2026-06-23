@@ -760,6 +760,8 @@ export default function App(){
   const [showAdmin,setShowAdmin]=useState(false);
   const [showAdd,setShowAdd]=useState(false);
   const [showImport,setShowImport]=useState(false);
+  /* Show turno/CAD picker on every fresh page load (sessionStorage resets on tab close) */
+  const [showPicker,setShowPicker]=useState(()=>!sessionStorage.getItem("icqa_picked"));
 
   /* Load from Supabase on mount */
   useEffect(()=>{
@@ -922,6 +924,59 @@ export default function App(){
   const fichaList=(secData.list||[]).filter(x=>x.name?.toLowerCase().includes(search.toLowerCase()));
   const trList=Object.entries(secData.data||{}).filter(([,p])=>p.name?.toLowerCase().includes(search.toLowerCase()));
 
+  /* ── CAD / TURNO PICKER ── */
+  if(showPicker){
+    const cadGroups={};
+    versoes.forEach(v=>{
+      const cad=verCads[v]||"(sem CAD)";
+      if(!cadGroups[cad]) cadGroups[cad]=[];
+      cadGroups[cad].push(v);
+    });
+    const pickTurno=(v)=>{
+      setActiveVer(v);
+      sessionStorage.setItem("icqa_picked","1");
+      setShowPicker(false);
+    };
+    return(
+      <div style={{background:BG,minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Segoe UI',system-ui,sans-serif",padding:24}}>
+        <div style={{width:28,height:28,background:Y,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16}}>
+          <span style={{fontSize:14,fontWeight:700,color:"#000"}}>IQ</span>
+        </div>
+        <div style={{fontSize:20,fontWeight:600,color:TXT,marginBottom:6}}>ICQA Tracker</div>
+        <div style={{fontSize:13,color:TXM,marginBottom:32,textAlign:"center"}}>Selecione o CAD e turno que deseja visualizar</div>
+        <div style={{display:"flex",flexDirection:"column",gap:20,width:"100%",maxWidth:420}}>
+          {Object.entries(cadGroups).map(([cad,vers])=>(
+            <div key={cad}>
+              <div style={{fontSize:11,fontWeight:600,color:Y,letterSpacing:"1px",textTransform:"uppercase",marginBottom:10}}>{cad}</div>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {vers.map(v=>(
+                  <button key={v} onClick={()=>pickTurno(v)}
+                    style={{background:SUR,border:`1px solid ${BDR}`,borderRadius:14,padding:"16px 20px",cursor:"pointer",textAlign:"left",transition:"border-color 0.2s",display:"flex",alignItems:"center",gap:14}}
+                    onMouseEnter={e=>e.currentTarget.style.borderColor=Y+"88"}
+                    onMouseLeave={e=>e.currentTarget.style.borderColor=BDR}>
+                    <div style={{width:40,height:40,borderRadius:10,background:"#1A1400",border:`1px solid ${Y}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700,color:Y,flexShrink:0}}>{v}</div>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:500,color:TXT,marginBottom:3}}>Turno {v}</div>
+                      <div style={{fontSize:11,color:TXM}}>{SECOES.reduce((s,sec)=>{
+                        const sd=data?.[v]?.[sec];
+                        if(!sd) return s;
+                        if(SECAO_TIPO[sec]==="performance") return s+Object.keys(sd.IC||{}).length+Object.keys(sd.QA||{}).length;
+                        if(SECAO_TIPO[sec]==="fichas") return s+(sd.list||[]).length;
+                        return s+Object.keys(sd.data||{}).length;
+                      },0)} colaboradores</div>
+                    </div>
+                    <div style={{marginLeft:"auto",fontSize:18,color:TXM}}>›</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{marginTop:32,fontSize:11,color:TXM}}>Criado por {CREATOR_NAME}</div>
+      </div>
+    );
+  }
+
   return(
     <div style={{background:BG,minHeight:"100vh",paddingBottom:44,fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
 
@@ -939,6 +994,10 @@ export default function App(){
           <div style={{fontSize:12,color:TXM,marginTop:2,marginLeft:38}}>Acompanhe o desempenho por turno, seção e tipo</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <button onClick={()=>{sessionStorage.removeItem("icqa_picked");setShowPicker(true);}}
+            style={{padding:"7px 12px",borderRadius:8,border:`1px solid ${BDR}`,background:"none",color:TXM,cursor:"pointer",fontSize:12}}>
+            ⇄ Turno
+          </button>
           {isCreator&&(
             <button onClick={()=>setShowAdmin(true)}
               style={{padding:"7px 14px",borderRadius:8,border:"1px solid #20103A",background:"#20103A",color:"#A47CF0",cursor:"pointer",fontSize:12,fontWeight:500}}>
@@ -1064,25 +1123,39 @@ export default function App(){
         )}
 
         {/* ── FICHAS PS SECTION ── */}
-        {secTipo==="fichas"&&(
+        {secTipo==="fichas"&&(()=>{
+          const areas=[...new Set(fichaList.map(x=>x.area||"Outros"))].sort();
+          const byArea=area=>fichaList.filter(x=>(x.area||"Outros")===area);
+          return(
           <>
             <div style={{background:SUR,border:`1px solid ${BDR}`,borderRadius:12,padding:"12px 18px",marginBottom:18,display:"flex",alignItems:"center",gap:12}}>
               <div style={{fontSize:28,fontWeight:500,color:Y}}>{fichaList.length}</div>
-              <div style={{fontSize:13,color:TXM}}>fichas cadastradas</div>
+              <div style={{fontSize:13,color:TXM}}>fichas cadastradas · {areas.length} áreas</div>
             </div>
             {fichaList.length===0?(
               <div style={{textAlign:"center",padding:"48px 0",color:TXM,fontSize:14}}>
                 {search?"Nenhuma ficha encontrada.":"Nenhuma ficha cadastrada."}
               </div>
             ):(
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:14}}>
-                {fichaList.map(item=>(
-                  <FichaCard key={item.id} item={item} canEdit={canEdit} onRemove={handleFichaRemove}/>
-                ))}
-              </div>
+              areas.map(area=>(
+                <div key={area} style={{marginBottom:24}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+                    <div style={{height:1,width:16,background:BDR}}/>
+                    <span style={{fontSize:11,fontWeight:600,color:Y,letterSpacing:"1px",textTransform:"uppercase"}}>{area}</span>
+                    <span style={{fontSize:10,color:TXM,background:SUR2,borderRadius:20,padding:"1px 8px"}}>{byArea(area).length}</span>
+                    <div style={{flex:1,height:1,background:BDR}}/>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:14}}>
+                    {byArea(area).map(item=>(
+                      <FichaCard key={item.id} item={item} canEdit={canEdit} onRemove={handleFichaRemove}/>
+                    ))}
+                  </div>
+                </div>
+              ))
             )}
           </>
-        )}
+          );
+        })()}
 
         {/* ── TREINAMENTOS SECTION ── */}
         {secTipo==="treinamentos"&&(
