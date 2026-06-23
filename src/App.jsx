@@ -2,7 +2,18 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { sb } from "./lib/supabase";
 import { STATIC_TRACKER, STATIC_PS_LIST, STATIC_TR_DATA } from "./staticData";
 
-const FERIAS_CSS=`
+const GLOBAL_CSS=`
+:root {
+  --y:#F5C518; --bg:#0D0D0D; --sur:#1A1A1A; --sur2:#242424;
+  --bdr:#2E2E2E; --txt:#F0F0F0; --txm:#A0A0A0;
+  --card-bg:#1A1A1A; --inp-bg:#111111; --inp-bdr:#444;
+  font-family:'Segoe UI',system-ui,-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+}
+[data-theme="light"] {
+  --bg:#F4F5F7; --sur:#FFFFFF; --sur2:#F0F1F3;
+  --bdr:#D8DADF; --txt:#1A1A1A; --txm:#6B7280;
+  --card-bg:#FFFFFF; --inp-bg:#FFFFFF; --inp-bdr:#C4C9D4;
+}
 @keyframes feriasPulse{
   0%,100%{box-shadow:0 0 0 0 #3EC9C444,0 0 12px 2px #3EC9C422;}
   50%{box-shadow:0 0 0 6px #3EC9C400,0 0 20px 6px #3EC9C433;}
@@ -16,17 +27,17 @@ const FERIAS_CSS=`
   50%{transform:rotate(10deg);}
 }`;
 if(typeof document!=="undefined"){
-  const s=document.createElement("style");s.textContent=FERIAS_CSS;document.head.appendChild(s);
+  const s=document.createElement("style");s.textContent=GLOBAL_CSS;document.head.appendChild(s);
 }
 
-/* ── palette ── */
-const Y    = "#F5C518";
-const BG   = "#0D0D0D";
-const SUR  = "#1A1A1A";
-const SUR2 = "#242424";
-const BDR  = "#2E2E2E";
-const TXT  = "#F0F0F0";
-const TXM  = "#A0A0A0";
+/* ── palette (CSS vars — update automatically with theme) ── */
+const Y    = "var(--y)";
+const BG   = "var(--bg)";
+const SUR  = "var(--sur)";
+const SUR2 = "var(--sur2)";
+const BDR  = "var(--bdr)";
+const TXT  = "var(--txt)";
+const TXM  = "var(--txm)";
 
 const CREATOR_NAME = "Melyssa Rangel de Figueiredo";
 const CREATOR_PASS = "Mel@ICQA07";
@@ -898,6 +909,7 @@ export default function App(){
   const [editors,setEditors]=useState(()=>loadState("icqa2_editors",{}));
   const [verCads,setVerCads]=useState(()=>loadState("icqa2_vercads",{}));
   const [currentUser,setCurrentUser]=useState(()=>loadState("icqa2_user",null));
+  const [theme,setTheme]=useState(()=>localStorage.getItem("icqa2_theme")||"dark");
   const [sbLoading,setSbLoading]=useState(true);
   const [sbErr,setSbErr]=useState(null);
 
@@ -956,6 +968,12 @@ export default function App(){
   useEffect(()=>{saveState("icqa2_editors",editors);},[editors]);
   useEffect(()=>{saveState("icqa2_user",currentUser);},[currentUser]);
   useEffect(()=>{saveState("icqa2_vercads",verCads);},[verCads]);
+  useEffect(()=>{
+    localStorage.setItem("icqa2_theme",theme);
+    document.documentElement.setAttribute("data-theme",theme);
+  },[theme]);
+  /* apply on first render */
+  useEffect(()=>{document.documentElement.setAttribute("data-theme",theme);},[]);
 
   useEffect(()=>{
     if(!currentUser||currentUser.isCreator) return;
@@ -1113,40 +1131,56 @@ export default function App(){
       localStorage.setItem("icqa2_access_log",JSON.stringify(prev.slice(0,500)));
       setShowIdent(false);
     };
+    const ready=identName.trim()&&identCad.trim();
     return(
-      <div style={{minHeight:"100vh",background:"#0D0D0D",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
-        <div style={{background:"#1A1A1A",border:"1px solid #333",borderRadius:16,padding:40,width:"100%",maxWidth:380,display:"flex",flexDirection:"column",gap:24}}>
-          <div style={{textAlign:"center"}}>
-            <div style={{fontSize:32,fontWeight:800,color:"#F5C518",letterSpacing:2,marginBottom:4}}>ICQA</div>
-            <div style={{color:"#888",fontSize:14}}>Identifique-se para continuar</div>
+      <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,position:"relative"}}>
+        {/* theme toggle */}
+        <button onClick={()=>setTheme(t=>t==="dark"?"light":"dark")}
+          style={{position:"absolute",top:20,right:20,padding:"7px 11px",borderRadius:8,border:`1px solid ${BDR}`,background:SUR,color:TXM,cursor:"pointer",fontSize:15,lineHeight:1}}>
+          {theme==="dark"?"☀️":"🌙"}
+        </button>
+
+        <div style={{width:"100%",maxWidth:400}}>
+          {/* logo block */}
+          <div style={{textAlign:"center",marginBottom:36}}>
+            <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:64,height:64,background:"#F5C518",borderRadius:18,marginBottom:16,boxShadow:"0 4px 24px #F5C51844"}}>
+              <span style={{fontSize:26,fontWeight:900,color:"#111",letterSpacing:-1,fontFamily:"'Segoe UI',system-ui,sans-serif"}}>IQ</span>
+            </div>
+            <div style={{fontSize:28,fontWeight:800,color:TXT,letterSpacing:-0.5,fontFamily:"'Segoe UI',system-ui,sans-serif"}}>ICQA <span style={{color:"#F5C518"}}>Tracker</span></div>
+            <div style={{color:TXM,fontSize:14,marginTop:6,fontWeight:400}}>Identifique-se para continuar</div>
           </div>
-          <div style={{display:"flex",flexDirection:"column",gap:16}}>
+
+          {/* card */}
+          <div style={{background:SUR,border:`1px solid ${BDR}`,borderRadius:20,padding:"32px 28px",display:"flex",flexDirection:"column",gap:20,boxShadow:"0 8px 40px #0008"}}>
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              <label style={{color:"#aaa",fontSize:12,fontWeight:600,letterSpacing:1}}>NOME</label>
+              <label style={{color:TXM,fontSize:11,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase"}}>Nome completo</label>
               <input
+                autoFocus
                 value={identName}
                 onChange={e=>setIdentName(e.target.value)}
                 onKeyDown={e=>e.key==="Enter"&&handleIdentSubmit()}
-                placeholder="Seu nome completo"
-                style={{background:"#111",border:"1px solid #444",borderRadius:8,padding:"10px 14px",color:"#fff",fontSize:15,outline:"none"}}
+                placeholder="Digite seu nome"
+                style={{background:"var(--inp-bg)",border:`1.5px solid ${ready&&identName.trim()?"#F5C51888":"var(--inp-bdr)"}`,borderRadius:10,padding:"11px 14px",color:TXT,fontSize:15,outline:"none",transition:"border-color .2s",fontFamily:"inherit"}}
               />
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              <label style={{color:"#aaa",fontSize:12,fontWeight:600,letterSpacing:1}}>CAD</label>
+              <label style={{color:TXM,fontSize:11,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase"}}>CAD (Unidade)</label>
               <input
                 value={identCad}
-                onChange={e=>setIdentCad(e.target.value)}
+                onChange={e=>setIdentCad(e.target.value.toUpperCase())}
                 onKeyDown={e=>e.key==="Enter"&&handleIdentSubmit()}
                 placeholder="Ex: BRRJ1"
-                style={{background:"#111",border:"1px solid #444",borderRadius:8,padding:"10px 14px",color:"#fff",fontSize:15,outline:"none",textTransform:"uppercase"}}
+                style={{background:"var(--inp-bg)",border:`1.5px solid ${ready&&identCad.trim()?"#F5C51888":"var(--inp-bdr)"}`,borderRadius:10,padding:"11px 14px",color:TXT,fontSize:15,outline:"none",transition:"border-color .2s",fontFamily:"inherit",letterSpacing:1}}
               />
             </div>
+            <button
+              onClick={handleIdentSubmit}
+              disabled={!ready}
+              style={{background:ready?"#F5C518":"var(--sur2)",color:ready?"#111":"var(--txm)",border:"none",borderRadius:10,padding:"13px 0",fontSize:15,fontWeight:700,cursor:ready?"pointer":"not-allowed",transition:"all .2s",marginTop:4,letterSpacing:"0.03em",fontFamily:"inherit"}}
+            >Entrar</button>
           </div>
-          <button
-            onClick={handleIdentSubmit}
-            disabled={!identName.trim()||!identCad.trim()}
-            style={{background:(!identName.trim()||!identCad.trim())?"#2A2A2A":"#F5C518",color:(!identName.trim()||!identCad.trim())?"#555":"#111",border:"none",borderRadius:10,padding:"12px 0",fontSize:16,fontWeight:700,cursor:(!identName.trim()||!identCad.trim())?"not-allowed":"pointer",transition:"all .2s"}}
-          >Entrar</button>
+
+          <div style={{textAlign:"center",marginTop:20,fontSize:11,color:TXM}}>Criado por Melyssa Rangel de Figueiredo</div>
         </div>
       </div>
     );
@@ -1222,6 +1256,10 @@ export default function App(){
           <div style={{fontSize:12,color:TXM,marginTop:2,marginLeft:38}}>Acompanhe o desempenho por turno, seção e tipo</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <button onClick={()=>setTheme(t=>t==="dark"?"light":"dark")} title="Alternar tema"
+            style={{padding:"7px 11px",borderRadius:8,border:`1px solid ${BDR}`,background:"none",color:TXM,cursor:"pointer",fontSize:15,lineHeight:1}}>
+            {theme==="dark"?"☀️":"🌙"}
+          </button>
           <button onClick={()=>{sessionStorage.removeItem("icqa_picked");setShowPicker(true);}}
             style={{padding:"7px 12px",borderRadius:8,border:`1px solid ${BDR}`,background:"none",color:TXM,cursor:"pointer",fontSize:12}}>
             ⇄ Turno
