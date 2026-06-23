@@ -828,7 +828,7 @@ function FichaCard({item,canEdit,onRemove,onUpdate}){
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
             <span style={{fontSize:13,fontWeight:500,color:TXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.name}</span>
-            {emFerias&&<span style={{fontSize:10,fontWeight:600,backgroundImage:"linear-gradient(90deg,#3EC97A,#7FFFBF,#3EC97A)",backgroundSize:"200% auto",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"feriasShimmer 3s linear infinite",flexShrink:0}}>Férias</span>}
+            {emFerias&&<span style={{fontSize:10,fontWeight:600,color:"#3EC97A",background:"#003A1E",borderRadius:20,padding:"1px 7px",flexShrink:0,animation:"feriasShimmer 3s linear infinite",backgroundImage:"linear-gradient(90deg,#3EC97A,#7FFFBF,#3EC97A)",backgroundSize:"200% auto",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Férias</span>}
           </div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:3}}>
             {item.re&&<span style={{fontSize:10,color:TXM}}>RE {item.re}</span>}
@@ -836,7 +836,7 @@ function FichaCard({item,canEdit,onRemove,onUpdate}){
             {item.escala&&<span style={{fontSize:10,...escalaBadge(item.escala),borderRadius:4,padding:"2px 7px"}}>Escala {item.escala}</span>}
           </div>
           {tempoDeCasa(item.admissao)&&<div style={{fontSize:10,color:TXM,marginTop:2}}>🕐 {tempoDeCasa(item.admissao)}</div>}
-          {ferias&&!emFerias&&<div style={{fontSize:10,color:"#3EC9C4",marginTop:2}}>🏖 Férias: {ferias}</div>}
+          {ferias&&<div style={{fontSize:10,color:"#3EC9C4",marginTop:2}}>🏖 Férias: {ferias}</div>}
         </div>
       </div>
       {expanded&&(
