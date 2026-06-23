@@ -459,8 +459,42 @@ function StatusBadge({pct}){
 }
 
 /* ── REP CARD (performance) ── */
+function InfoTooltip({values,ferias,onClose}){
+  const rows=[
+    values.re&&["RE",values.re],
+    values.ldap&&["LDAP",values.ldap],
+    values.cpf&&["CPF",values.cpf],
+    values.cargo&&["Cargo",values.cargo],
+    values.escala&&["Escala",values.escala],
+    values.admissao&&["Admissão",values.admissao],
+    tempoDeCasa(values.admissao)&&["Tempo de casa",tempoDeCasa(values.admissao)],
+    values.telefone&&["Telefone",values.telefone],
+    values.contEmer&&["Emergência",values.contEmer],
+    values.endereco&&["Endereço",values.endereco],
+    ferias&&["Férias",ferias],
+  ].filter(Boolean);
+  return(
+    <div style={{position:"absolute",top:48,left:0,zIndex:200,background:"#1C1C1C",border:`1px solid ${BDR}`,borderRadius:12,padding:"12px 14px",minWidth:240,maxWidth:300,boxShadow:"0 8px 32px #0009"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <span style={{fontSize:12,fontWeight:600,color:Y,letterSpacing:"0.5px",textTransform:"uppercase"}}>Ficha</span>
+        <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,color:TXM,lineHeight:1}}>×</button>
+      </div>
+      {rows.length===0
+        ? <div style={{fontSize:12,color:TXM}}>Nenhuma informação cadastrada.</div>
+        : rows.map(([lbl,val])=>(
+          <div key={lbl} style={{display:"flex",gap:6,marginBottom:5,alignItems:"flex-start"}}>
+            <span style={{fontSize:10,color:TXM,width:72,flexShrink:0,paddingTop:1}}>{lbl}</span>
+            <span style={{fontSize:11,color:TXT,wordBreak:"break-word"}}>{val}</span>
+          </div>
+        ))
+      }
+    </div>
+  );
+}
+
 function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
   const [expanded,setExpanded]=useState(false);
+  const [showInfo,setShowInfo]=useState(false);
   const a=repAvg(values,tipo);
   const tarefas=TAREFAS[tipo];
   const initials=rep.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
@@ -475,7 +509,10 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
   return(
     <div style={{background:SUR,border:`1px solid ${expanded?Y+"55":BDR}`,borderRadius:16,padding:18,display:"flex",flexDirection:"column",gap:12,transition:"border-color 0.2s"}}>
       <div style={{display:"flex",alignItems:"center",gap:12}}>
-        <div style={{width:40,height:40,borderRadius:"50%",background:`hsla(${hue},60%,18%,1)`,border:`1.5px solid hsla(${hue},60%,45%,0.6)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:500,color:`hsl(${hue},80%,75%)`,flexShrink:0}}>{initials}</div>
+        <div style={{position:"relative",flexShrink:0}}>
+          <div onClick={()=>setShowInfo(s=>!s)} style={{width:40,height:40,borderRadius:"50%",background:`hsla(${hue},60%,18%,1)`,border:`1.5px solid ${showInfo?Y:("hsla("+hue+",60%,45%,0.6)")}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:500,color:`hsl(${hue},80%,75%)`,cursor:"pointer",transition:"border-color 0.2s"}}>{initials}</div>
+          {showInfo&&<InfoTooltip values={values} ferias={ferias} onClose={()=>setShowInfo(false)}/>}
+        </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize:13,fontWeight:500,color:TXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginBottom:2}}>{rep}</div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:2}}>
@@ -576,13 +613,17 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
 /* ── FICHA CARD (Fichas PS) ── */
 function FichaCard({item,canEdit,onRemove}){
   const [expanded,setExpanded]=useState(false);
+  const [showInfo,setShowInfo]=useState(false);
   const hue=(item.name.charCodeAt(0)*37+(item.name.charCodeAt(item.name.length-1)||0)*17)%360;
   const initials=item.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
   const ferias=item.feriasIni&&item.feriasFim?`${item.feriasIni} → ${item.feriasFim} (${item.feriasDias||0}d)`:null;
   return(
     <div style={{background:SUR,border:`1px solid ${expanded?Y+"55":BDR}`,borderRadius:16,padding:18,display:"flex",flexDirection:"column",gap:10,transition:"border-color 0.2s"}}>
       <div style={{display:"flex",alignItems:"center",gap:12}}>
-        <div style={{width:40,height:40,borderRadius:"50%",background:`hsla(${hue},50%,18%,1)`,border:`1.5px solid hsla(${hue},50%,45%,0.6)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:500,color:`hsl(${hue},70%,75%)`,flexShrink:0}}>{initials}</div>
+        <div style={{position:"relative",flexShrink:0}}>
+          <div onClick={()=>setShowInfo(s=>!s)} style={{width:40,height:40,borderRadius:"50%",background:`hsla(${hue},50%,18%,1)`,border:`1.5px solid ${showInfo?Y:("hsla("+hue+",50%,45%,0.6)")}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:500,color:`hsl(${hue},70%,75%)`,cursor:"pointer",transition:"border-color 0.2s"}}>{initials}</div>
+          {showInfo&&<InfoTooltip values={{...item,admissao:item.admissao}} ferias={ferias} onClose={()=>setShowInfo(false)}/>}
+        </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize:13,fontWeight:500,color:TXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.name}</div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:3}}>
@@ -619,6 +660,7 @@ function FichaCard({item,canEdit,onRemove}){
 /* ── TREINAMENTO CARD ── */
 function TrCard({person,canEdit,onToggle}){
   const [expanded,setExpanded]=useState(false);
+  const [showInfo,setShowInfo]=useState(false);
   const trainings=person.trainings||[];
   const done=trainings.filter(t=>t.done).length;
   const pct=trainings.length?Math.round((done/trainings.length)*100):0;
@@ -627,7 +669,10 @@ function TrCard({person,canEdit,onToggle}){
   return(
     <div style={{background:SUR,border:`1px solid ${expanded?Y+"55":BDR}`,borderRadius:16,padding:18,display:"flex",flexDirection:"column",gap:10,transition:"border-color 0.2s"}}>
       <div style={{display:"flex",alignItems:"center",gap:12}}>
-        <div style={{width:40,height:40,borderRadius:"50%",background:`hsla(${hue},50%,18%,1)`,border:`1.5px solid hsla(${hue},50%,45%,0.6)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:500,color:`hsl(${hue},70%,75%)`,flexShrink:0}}>{initials}</div>
+        <div style={{position:"relative",flexShrink:0}}>
+          <div onClick={()=>setShowInfo(s=>!s)} style={{width:40,height:40,borderRadius:"50%",background:`hsla(${hue},50%,18%,1)`,border:`1.5px solid ${showInfo?Y:("hsla("+hue+",50%,45%,0.6)")}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:500,color:`hsl(${hue},70%,75%)`,cursor:"pointer",transition:"border-color 0.2s"}}>{initials}</div>
+          {showInfo&&<InfoTooltip values={{admissao:person.admission}} ferias={null} onClose={()=>setShowInfo(false)}/>}
+        </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize:13,fontWeight:500,color:TXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{person.name}</div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:3}}>
