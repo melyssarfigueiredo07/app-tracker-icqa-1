@@ -1140,14 +1140,15 @@ export default function App(){
           {theme==="dark"?"☀️":"🌙"}
         </button>
 
-        <div style={{width:"100%",maxWidth:400}}>
+        <div style={{width:"100%",maxWidth:420}}>
           {/* logo block */}
-          <div style={{textAlign:"center",marginBottom:36}}>
-            <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:64,height:64,background:"#F5C518",borderRadius:18,marginBottom:16,boxShadow:"0 4px 24px #F5C51844"}}>
-              <span style={{fontSize:26,fontWeight:900,color:"#111",letterSpacing:-1,fontFamily:"'Segoe UI',system-ui,sans-serif"}}>IQ</span>
+          <div style={{textAlign:"center",marginBottom:40}}>
+            <div style={{display:"inline-flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#F5C518",borderRadius:20,padding:"18px 32px",marginBottom:20,boxShadow:"0 6px 32px #F5C51855"}}>
+              <span style={{fontSize:13,fontWeight:900,color:"#111",letterSpacing:"0.18em",fontFamily:"'Segoe UI',system-ui,sans-serif",lineHeight:1}}>ICQA</span>
+              <div style={{width:"100%",height:1.5,background:"#11111133",margin:"7px 0"}}/>
+              <span style={{fontSize:11,fontWeight:700,color:"#333",letterSpacing:"0.22em",fontFamily:"'Segoe UI',system-ui,sans-serif",lineHeight:1}}>TRACKER</span>
             </div>
-            <div style={{fontSize:28,fontWeight:800,color:TXT,letterSpacing:-0.5,fontFamily:"'Segoe UI',system-ui,sans-serif"}}>ICQA <span style={{color:"#F5C518"}}>Tracker</span></div>
-            <div style={{color:TXM,fontSize:14,marginTop:6,fontWeight:400}}>Identifique-se para continuar</div>
+            <div style={{color:TXM,fontSize:14,fontWeight:400,letterSpacing:"0.01em"}}>Identifique-se para continuar</div>
           </div>
 
           {/* card */}
@@ -1201,10 +1202,11 @@ export default function App(){
     };
     return(
       <div style={{background:BG,minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Segoe UI',system-ui,sans-serif",padding:24}}>
-        <div style={{width:28,height:28,background:Y,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16}}>
-          <span style={{fontSize:14,fontWeight:700,color:"#000"}}>IQ</span>
+        <div style={{display:"inline-flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#F5C518",borderRadius:16,padding:"14px 24px",marginBottom:20,boxShadow:"0 4px 20px #F5C51844"}}>
+          <span style={{fontSize:12,fontWeight:900,color:"#111",letterSpacing:"0.18em",lineHeight:1}}>ICQA</span>
+          <div style={{width:"100%",height:1,background:"#11111133",margin:"6px 0"}}/>
+          <span style={{fontSize:10,fontWeight:700,color:"#333",letterSpacing:"0.22em",lineHeight:1}}>TRACKER</span>
         </div>
-        <div style={{fontSize:20,fontWeight:600,color:TXT,marginBottom:6}}>ICQA Tracker</div>
         <div style={{fontSize:13,color:TXM,marginBottom:32,textAlign:"center"}}>Selecione o CAD e turno que deseja visualizar</div>
         <div style={{display:"flex",flexDirection:"column",gap:20,width:"100%",maxWidth:420}}>
           {Object.entries(cadGroups).map(([cad,vers])=>(
@@ -1246,8 +1248,10 @@ export default function App(){
       <div style={{borderBottom:`1px solid ${BDR}`,padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{padding:"16px 0"}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <div style={{width:28,height:28,background:Y,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <span style={{fontSize:14,fontWeight:700,color:"#000"}}>IQ</span>
+            <div style={{display:"inline-flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#F5C518",borderRadius:8,padding:"4px 8px"}}>
+              <span style={{fontSize:8,fontWeight:900,color:"#111",letterSpacing:"0.14em",lineHeight:1}}>ICQA</span>
+              <div style={{width:"100%",height:1,background:"#11111133",margin:"2px 0"}}/>
+              <span style={{fontSize:6,fontWeight:700,color:"#333",letterSpacing:"0.14em",lineHeight:1}}>TRACKER</span>
             </div>
             <span style={{fontSize:18,fontWeight:500,color:TXT}}>ICQA Tracker</span>
             {sbLoading&&<span style={{fontSize:11,color:TXM,background:SUR,borderRadius:20,padding:"2px 8px"}}>⟳ carregando</span>}
