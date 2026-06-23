@@ -749,9 +749,69 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit,taskList}){
 }
 
 /* ── FICHA CARD (Fichas PS) ── */
-function FichaCard({item,canEdit,onRemove}){
+/* ── EDIT FICHA MODAL ── */
+function EditFichaModal({item,onSave,onClose}){
+  const [form,setForm]=useState({...item});
+  function f(k,v){setForm(p=>({...p,[k]:v}));}
+  const field=(label,key,type="text",extra={})=>(
+    <div style={{display:"flex",flexDirection:"column",gap:4}}>
+      <label style={{fontSize:11,color:TXM,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase"}}>{label}</label>
+      <input type={type} value={form[key]||""} onChange={e=>f(key,e.target.value)} {...extra}
+        style={{background:"var(--inp-bg)",border:`1px solid ${BDR}`,color:TXT,borderRadius:8,padding:"8px 11px",fontSize:13,outline:"none",width:"100%",boxSizing:"border-box"}}/>
+    </div>
+  );
+  const sel=(label,key,opts)=>(
+    <div style={{display:"flex",flexDirection:"column",gap:4}}>
+      <label style={{fontSize:11,color:TXM,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase"}}>{label}</label>
+      <select value={form[key]||""} onChange={e=>f(key,e.target.value)}
+        style={{background:"var(--inp-bg)",border:`1px solid ${BDR}`,color:TXT,borderRadius:8,padding:"8px 11px",fontSize:13,outline:"none"}}>
+        <option value="">—</option>
+        {opts.map(o=><option key={o} value={o}>{o}</option>)}
+      </select>
+    </div>
+  );
+  return(
+    <ModalWrap onClose={onClose} width={520}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <div>
+          <div style={{fontSize:16,fontWeight:500,color:TXT}}>Editar Ficha PS</div>
+          <div style={{fontSize:12,color:TXM,marginTop:2}}>{item.name}</div>
+        </div>
+        <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:TXM}}>×</button>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:12,maxHeight:"65vh",overflowY:"auto",paddingRight:4}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          {field("Nome completo","name")}
+          {field("RE","re")}
+          {field("CPF","cpf")}
+          {field("LDAP","ldap")}
+          {field("Telefone","telefone")}
+          {sel("Área","area",["Inventário","Qualidade","Outbound","Inbound","Outros"])}
+          {sel("Escala","escala",["A","B","C","D"])}
+          {field("Admissão","admissao","date")}
+        </div>
+        {field("Contato de emergência","contEmer")}
+        {field("Endereço","endereco")}
+        {field("Observações","obs")}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+          {field("Início férias","feriasIni","date")}
+          {field("Fim férias","feriasFim","date")}
+          {field("Dias de férias","feriasDias","number",{min:0,max:60})}
+        </div>
+      </div>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:20}}>
+        <button onClick={onClose} style={{padding:"8px 18px",borderRadius:8,border:`1px solid ${BDR}`,background:"none",color:TXM,cursor:"pointer",fontSize:13}}>Cancelar</button>
+        <button onClick={()=>{onSave({...form,feriasDias:Number(form.feriasDias)||0});onClose();}}
+          style={{padding:"8px 22px",borderRadius:8,border:"none",background:"#F5C518",color:"#111",cursor:"pointer",fontSize:13,fontWeight:600}}>Salvar</button>
+      </div>
+    </ModalWrap>
+  );
+}
+
+function FichaCard({item,canEdit,onRemove,onUpdate}){
   const [expanded,setExpanded]=useState(false);
   const [showInfo,setShowInfo]=useState(false);
+  const [showEdit,setShowEdit]=useState(false);
   const hue=(item.name.charCodeAt(0)*37+(item.name.charCodeAt(item.name.length-1)||0)*17)%360;
   const initials=item.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
   const ferias=item.feriasIni&&item.feriasFim?`${item.feriasIni} → ${item.feriasFim} (${item.feriasDias||0}d)`:null;
@@ -791,12 +851,15 @@ function FichaCard({item,canEdit,onRemove}){
       )}
       <div style={{display:"flex",gap:8,borderTop:`1px solid ${BDR}`,paddingTop:8}}>
         <button onClick={()=>setExpanded(e=>!e)}
-          style={{flex:1,padding:"6px 0",borderRadius:8,border:`1px solid ${expanded?Y+"66":BDR}`,background:expanded?"#1A1400":"none",cursor:"pointer",fontSize:12,color:expanded?Y:TXM}}>
+          style={{flex:1,padding:"6px 0",borderRadius:8,border:`1px solid ${expanded?"#F5C51866":BDR}`,background:expanded?"var(--turno-icon-bg)":"none",cursor:"pointer",fontSize:12,color:expanded?Y:TXM}}>
           {expanded?"✕ Fechar":"Ver detalhes"}
         </button>
+        {canEdit&&<button onClick={()=>setShowEdit(true)}
+          style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${BDR}`,background:"none",cursor:"pointer",fontSize:12,color:TXM}}>Editar</button>}
         {canEdit&&<button onClick={()=>onRemove(item.id)}
-          style={{padding:"6px 12px",borderRadius:8,border:"1px solid #3A0D1A",background:"none",cursor:"pointer",fontSize:12,color:"#E05C7A"}}>Remover</button>}
+          style={{padding:"6px 12px",borderRadius:8,border:"1px solid var(--err-bg)",background:"none",cursor:"pointer",fontSize:12,color:"var(--err-txt)"}}>Remover</button>}
       </div>
+      {showEdit&&<EditFichaModal item={item} onSave={onUpdate} onClose={()=>setShowEdit(false)}/>}
     </div>
   );
 }
@@ -1219,6 +1282,13 @@ export default function App(){
     });
   },[activeVer]);
 
+  const handleFichaUpdate=useCallback((updated)=>{
+    setData(d=>{
+      const list=(d[activeVer]["Fichas PS"].list||[]).map(x=>x.id===updated.id?updated:x);
+      return{...d,[activeVer]:{...d[activeVer],"Fichas PS":{list}}};
+    });
+  },[activeVer]);
+
   const tabStyle=(active)=>({
     padding:"10px 20px",border:"none",whiteSpace:"nowrap",cursor:"pointer",fontSize:14,
     borderBottom:active?`2px solid ${Y}`:"2px solid transparent",
@@ -1548,7 +1618,7 @@ export default function App(){
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:14}}>
                     {byArea(area).map(item=>(
-                      <FichaCard key={item.id} item={item} canEdit={canEdit} onRemove={handleFichaRemove}/>
+                      <FichaCard key={item.id} item={item} canEdit={canEdit} onRemove={handleFichaRemove} onUpdate={handleFichaUpdate}/>
                     ))}
                   </div>
                 </div>
