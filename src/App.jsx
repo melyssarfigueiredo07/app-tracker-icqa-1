@@ -4,17 +4,54 @@ import { STATIC_TRACKER, STATIC_PS_LIST, STATIC_TR_DATA } from "./staticData";
 
 const GLOBAL_CSS=`
 :root {
-  --y:#F5C518; --bg:#0D0D0D; --sur:#1A1A1A; --sur2:#242424;
+  --y:#F5C518;
+  --bg:#0D0D0D; --sur:#1A1A1A; --sur2:#242424; --sur3:#111111;
   --bdr:#2E2E2E; --txt:#F0F0F0; --txm:#A0A0A0;
-  --card-bg:#1A1A1A; --inp-bg:#111111; --inp-bdr:#444;
+  --inp-bg:#111111; --inp-bdr:#444;
   --ferias-bg:#0A1A10;
+  --tooltip-bg:#1E1E1E;
+  --err-bg:#3A0D1A; --err-txt:#E05C7A;
+  --badge-green-bg:#003A1E; --badge-green-txt:#3EC97A;
+  --badge-lime-bg:#1A2E00; --badge-lime-txt:#8ED64A;
+  --badge-orange-bg:#3A1C00; --badge-orange-txt:#E8833A;
+  --badge-blue-bg:#1A1A3A; --badge-blue-txt:#7A9CF0;
+  --badge-purple-bg:#20103A; --badge-purple-txt:#A47CF0;
+  --badge-scale-bg:#1A2000; --badge-scale-txt:#8ED64A;
+  --badge-cad-bg:#003A1E; --badge-cad-txt:#3EC97A;
+  --admin-btn-bg:#20103A; --admin-btn-txt:#A47CF0; --admin-btn-bdr:#20103A;
+  --turno-bar-bg:#111111;
+  --turno-icon-bg:#1A1400;
+  --pct0-bg:#1A1A1A; --pct0-txt:#666;
+  --pct25-bg:#3A0D1A; --pct25-txt:#E05C7A;
+  --pct50-bg:#2A2A2A; --pct50-txt:#B0B0B0;
+  --pct75-bg:#3A2E00; --pct75-txt:#F5C518;
+  --pct100-bg:#003A1E; --pct100-txt:#3EC97A;
   font-family:'Segoe UI',system-ui,-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
 }
+* { transition: background-color 0.2s, border-color 0.2s, color 0.15s; }
+button,input,select,textarea { transition: background-color 0.2s, border-color 0.2s, color 0.15s, opacity 0.15s; }
 [data-theme="light"] {
-  --bg:#F4F5F7; --sur:#FFFFFF; --sur2:#F0F1F3;
-  --bdr:#D8DADF; --txt:#1A1A1A; --txm:#6B7280;
-  --card-bg:#FFFFFF; --inp-bg:#FFFFFF; --inp-bdr:#C4C9D4;
+  --bg:#F0F2F5; --sur:#FFFFFF; --sur2:#F4F5F7; --sur3:#FFFFFF;
+  --bdr:#DDE1E7; --txt:#111827; --txm:#6B7280;
+  --inp-bg:#FFFFFF; --inp-bdr:#C9CDD6;
   --ferias-bg:#D6F5E3;
+  --tooltip-bg:#FFFFFF;
+  --err-bg:#FFE8EC; --err-txt:#C0162E;
+  --badge-green-bg:#D4F5E7; --badge-green-txt:#0A7A40;
+  --badge-lime-bg:#EBF7D4; --badge-lime-txt:#3A6E00;
+  --badge-orange-bg:#FFF0E0; --badge-orange-txt:#C05A00;
+  --badge-blue-bg:#EAF0FF; --badge-blue-txt:#2A50B0;
+  --badge-purple-bg:#EEE6FF; --badge-purple-txt:#5A20B0;
+  --badge-scale-bg:#EBF7D4; --badge-scale-txt:#3A6E00;
+  --badge-cad-bg:#D4F5E7; --badge-cad-txt:#0A7A40;
+  --admin-btn-bg:#EEE6FF; --admin-btn-txt:#5A20B0; --admin-btn-bdr:#DDD0FF;
+  --turno-bar-bg:#E8EAED;
+  --turno-icon-bg:#FFF8D6;
+  --pct0-bg:#EBEBEB; --pct0-txt:#888;
+  --pct25-bg:#FFE5EC; --pct25-txt:#C0162E;
+  --pct50-bg:#F2F2F2; --pct50-txt:#444;
+  --pct75-bg:#FFF8DC; --pct75-txt:#9A6E00;
+  --pct100-bg:#D4F5E7; --pct100-txt:#0A7A40;
 }
 @keyframes feriasPulse{
   0%,100%{box-shadow:0 0 0 0 #3EC9C444,0 0 12px 2px #3EC9C422;}
@@ -80,18 +117,18 @@ function isOnFerias(ini,fim){
   return today>=ini&&today<=fim;
 }
 function pctColor(v){
-  if(v<=0)  return "#555";
-  if(v<=25) return "#E05C7A";
-  if(v<=50) return "#F0F0F0";
-  if(v<=75) return "#F5C518";
-  return "#3EC97A";
+  if(v<=0)  return "var(--pct0-txt)";
+  if(v<=25) return "var(--pct25-txt)";
+  if(v<=50) return "var(--pct50-txt)";
+  if(v<=75) return "var(--pct75-txt)";
+  return "var(--pct100-txt)";
 }
 function pctBg(v){
-  if(v<=0)  return "#1A1A1A";
-  if(v<=25) return "#3A0D1A";
-  if(v<=50) return "#2A2A2A";
-  if(v<=75) return "#3A2E00";
-  return "#003A1E";
+  if(v<=0)  return "var(--pct0-bg)";
+  if(v<=25) return "var(--pct25-bg)";
+  if(v<=50) return "var(--pct50-bg)";
+  if(v<=75) return "var(--pct75-bg)";
+  return "var(--pct100-bg)";
 }
 function avg(vals) {
   if (!vals.length) return 0;
@@ -201,7 +238,7 @@ function LoginModal({onLogin,onClose}){
           </button>
         ))}
       </div>
-      {err&&<div style={{background:"#3A0D1A",color:"#E05C7A",borderRadius:8,padding:"9px 13px",fontSize:13,marginBottom:14}}>{err}</div>}
+      {err&&<div style={{background:"var(--err-bg)",color:"var(--err-txt)",borderRadius:8,padding:"9px 13px",fontSize:13,marginBottom:14}}>{err}</div>}
       {mode==="user"?(
         <>
           <label style={{fontSize:12,color:TXM,display:"block",marginBottom:5}}>Seu nome</label>
@@ -257,7 +294,7 @@ function AdminModal({versoes,editors,verCads,onSetVerCad,onSetEditors,onAddVersa
           </button>
         ))}
       </div>
-      {err&&<div style={{background:"#3A0D1A",color:"#E05C7A",borderRadius:8,padding:"9px 13px",fontSize:13,marginBottom:14}}>{err}</div>}
+      {err&&<div style={{background:"var(--err-bg)",color:"var(--err-txt)",borderRadius:8,padding:"9px 13px",fontSize:13,marginBottom:14}}>{err}</div>}
       {tab==="editors"&&(
         <div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
@@ -277,7 +314,7 @@ function AdminModal({versoes,editors,verCads,onSetVerCad,onSetEditors,onAddVersa
               {cur.map(e=>(
                 <div key={e} style={{display:"flex",alignItems:"center",gap:10,background:SUR,borderRadius:10,padding:"10px 14px",border:`1px solid ${BDR}`}}>
                   <div style={{flex:1,fontSize:14,color:TXT}}>{e}</div>
-                  <span style={{fontSize:11,background:"#20103A",color:"#A47CF0",borderRadius:20,padding:"2px 8px"}}>Editor</span>
+                  <span style={{fontSize:11,background:"var(--badge-purple-bg)",color:"var(--badge-purple-txt)",borderRadius:20,padding:"2px 8px"}}>Editor</span>
                   <button onClick={()=>onSetEditors(selVer,cur.filter(x=>x!==e))}
                     style={{padding:"4px 10px",borderRadius:7,border:"1px solid #3A0D1A",background:"none",cursor:"pointer",fontSize:12,color:"#E05C7A"}}>Revogar</button>
                 </div>
@@ -303,7 +340,7 @@ function AdminModal({versoes,editors,verCads,onSetVerCad,onSetEditors,onAddVersa
               <div key={v} style={{display:"flex",flexDirection:"column",gap:8,background:SUR,borderRadius:10,padding:"12px 14px",border:`1px solid ${BDR}`}}>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
                   <span style={{flex:1,fontSize:14,color:TXT,fontWeight:500}}>{v}</span>
-                  {verCads[v]&&<span style={{fontSize:11,background:"#003A1E",color:"#3EC97A",borderRadius:20,padding:"2px 8px"}}>{verCads[v]}</span>}
+                  {verCads[v]&&<span style={{fontSize:11,background:"var(--badge-cad-bg)",color:"var(--badge-cad-txt)",borderRadius:20,padding:"2px 8px"}}>{verCads[v]}</span>}
                   {versoes.length>1&&(
                     <button onClick={()=>onRemoveVersao(v)}
                       style={{padding:"4px 10px",borderRadius:7,border:"1px solid #3A0D1A",background:"none",cursor:"pointer",fontSize:12,color:"#E05C7A"}}>Remover</button>
@@ -344,7 +381,7 @@ function AdminModal({versoes,editors,verCads,onSetVerCad,onSetEditors,onAddVersa
             <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:340,overflowY:"auto"}}>
               {accessLog.map((entry,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",gap:12,background:SUR,borderRadius:10,padding:"10px 14px",border:`1px solid ${BDR}`}}>
-                  <div style={{width:34,height:34,borderRadius:"50%",background:"#1A1400",border:`1px solid ${Y}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:Y,flexShrink:0}}>
+                  <div style={{width:34,height:34,borderRadius:"50%",background:"var(--turno-icon-bg)",border:`1px solid #F5C518`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:Y,flexShrink:0}}>
                     {entry.name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase()}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
@@ -448,7 +485,7 @@ function ImportModal({versao,secao,tipo,onImport,onClose}){
         </div>
         <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:TXM}}>×</button>
       </div>
-      {err&&<div style={{background:"#3A0D1A",color:"#E05C7A",borderRadius:8,padding:"10px 14px",fontSize:13,marginBottom:14}}>{err}</div>}
+      {err&&<div style={{background:"var(--err-bg)",color:"var(--err-txt)",borderRadius:8,padding:"10px 14px",fontSize:13,marginBottom:14}}>{err}</div>}
       {step==="upload"&&(
         <div onDrop={e=>{e.preventDefault();if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);}} onDragOver={e=>e.preventDefault()}
           style={{border:`2px dashed ${BDR}`,borderRadius:12,padding:"36px 20px",textAlign:"center",cursor:"pointer"}}
@@ -532,10 +569,11 @@ function RadialProgress({pct,color=Y,size=48}){
 }
 
 function StatusBadge({pct}){
-  if(pct===100) return <span style={{fontSize:11,background:"#003A1E",color:"#3EC97A",borderRadius:20,padding:"2px 8px",fontWeight:500}}>Ótimo</span>;
-  if(pct>=75)   return <span style={{fontSize:11,background:"#1A2E00",color:"#8ED64A",borderRadius:20,padding:"2px 8px",fontWeight:500}}>Bom</span>;
-  if(pct>=50)   return <span style={{fontSize:11,background:"#3A1C00",color:"#E8833A",borderRadius:20,padding:"2px 8px",fontWeight:500}}>Regular</span>;
-  return <span style={{fontSize:11,background:"#1A1A3A",color:"#7A9CF0",borderRadius:20,padding:"2px 8px",fontWeight:500}}>Aprendendo</span>;
+  const s={fontSize:11,borderRadius:20,padding:"2px 8px",fontWeight:500};
+  if(pct===100) return <span style={{...s,background:"var(--badge-green-bg)",color:"var(--badge-green-txt)"}}>Ótimo</span>;
+  if(pct>=75)   return <span style={{...s,background:"var(--badge-lime-bg)",color:"var(--badge-lime-txt)"}}>Bom</span>;
+  if(pct>=50)   return <span style={{...s,background:"var(--badge-orange-bg)",color:"var(--badge-orange-txt)"}}>Regular</span>;
+  return <span style={{...s,background:"var(--badge-blue-bg)",color:"var(--badge-blue-txt)"}}>Aprendendo</span>;
 }
 
 /* ── REP CARD (performance) ── */
@@ -554,7 +592,7 @@ function InfoTooltip({values,ferias,onClose}){
     ferias&&["Férias",ferias],
   ].filter(Boolean);
   return(
-    <div style={{position:"absolute",top:48,left:0,zIndex:200,background:"#1C1C1C",border:`1px solid ${BDR}`,borderRadius:12,padding:"12px 14px",minWidth:240,maxWidth:300,boxShadow:"0 8px 32px #0009"}}>
+    <div style={{position:"absolute",top:48,left:0,zIndex:200,background:"var(--tooltip-bg)",border:`1px solid ${BDR}`,borderRadius:12,padding:"12px 14px",minWidth:240,maxWidth:300,boxShadow:"0 8px 32px #0006"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
         <span style={{fontSize:12,fontWeight:600,color:Y,letterSpacing:"0.5px",textTransform:"uppercase"}}>Ficha</span>
         <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,color:TXM,lineHeight:1}}>×</button>
@@ -604,7 +642,7 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit}){
           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:2}}>
             {values.re&&<span style={{fontSize:10,color:TXM}}>RE {values.re}</span>}
             {values.cargo&&<span style={{fontSize:10,background:SUR2,color:TXM,borderRadius:4,padding:"1px 5px"}}>{values.cargo}</span>}
-            {values.escala&&<span style={{fontSize:10,background:"#1A2000",color:"#8ED64A",borderRadius:4,padding:"1px 5px"}}>Esc {values.escala}</span>}
+            {values.escala&&<span style={{fontSize:10,background:"var(--badge-scale-bg)",color:"var(--badge-scale-txt)",borderRadius:4,padding:"1px 5px"}}>Esc {values.escala}</span>}
           </div>
           {tempoDeCasa(values.admissao)&&<div style={{fontSize:10,color:TXM}}>🕐 {tempoDeCasa(values.admissao)}</div>}
           {ferias&&<div style={{fontSize:10,color:"#3EC9C4",marginTop:2}}>🏖 Férias: {ferias}</div>}
@@ -725,7 +763,7 @@ function FichaCard({item,canEdit,onRemove}){
           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:3}}>
             {item.re&&<span style={{fontSize:10,color:TXM}}>RE {item.re}</span>}
             {item.area&&<span style={{fontSize:10,background:SUR2,color:TXM,borderRadius:4,padding:"1px 5px"}}>{item.area}</span>}
-            {item.escala&&<span style={{fontSize:10,background:"#1A2000",color:"#8ED64A",borderRadius:4,padding:"1px 5px"}}>Esc {item.escala}</span>}
+            {item.escala&&<span style={{fontSize:10,background:"var(--badge-scale-bg)",color:"var(--badge-scale-txt)",borderRadius:4,padding:"1px 5px"}}>Esc {item.escala}</span>}
           </div>
           {tempoDeCasa(item.admissao)&&<div style={{fontSize:10,color:TXM,marginTop:2}}>🕐 {tempoDeCasa(item.admissao)}</div>}
           {ferias&&!emFerias&&<div style={{fontSize:10,color:"#3EC9C4",marginTop:2}}>🏖 Férias: {ferias}</div>}
@@ -832,7 +870,7 @@ function AddTrModal({onAdd,onClose}){
         <div style={{fontSize:16,fontWeight:500,color:TXT}}>Cadastrar Treinamento</div>
         <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:TXM}}>×</button>
       </div>
-      {err&&<div style={{background:"#3A0D1A",color:"#E05C7A",borderRadius:8,padding:"9px 13px",fontSize:13,marginBottom:14}}>{err}</div>}
+      {err&&<div style={{background:"var(--err-bg)",color:"var(--err-txt)",borderRadius:8,padding:"9px 13px",fontSize:13,marginBottom:14}}>{err}</div>}
       <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
         <div>
           <label style={{fontSize:11,color:TXM,display:"block",marginBottom:4}}>Nome completo *</label>
@@ -1223,7 +1261,7 @@ export default function App(){
                     style={{background:SUR,border:`1px solid ${BDR}`,borderRadius:14,padding:"16px 20px",cursor:"pointer",textAlign:"left",transition:"border-color 0.2s",display:"flex",alignItems:"center",gap:14}}
                     onMouseEnter={e=>e.currentTarget.style.borderColor=Y+"88"}
                     onMouseLeave={e=>e.currentTarget.style.borderColor=BDR}>
-                    <div style={{width:40,height:40,borderRadius:10,background:"#1A1400",border:`1px solid ${Y}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700,color:Y,flexShrink:0}}>{v}</div>
+                    <div style={{width:40,height:40,borderRadius:10,background:"var(--turno-icon-bg)",border:`1px solid #F5C51844`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700,color:Y,flexShrink:0}}>{v}</div>
                     <div>
                       <div style={{fontSize:14,fontWeight:500,color:TXT,marginBottom:3}}>Turno {v}</div>
                       <div style={{fontSize:11,color:TXM}}>{SECOES.reduce((s,sec)=>{
@@ -1275,7 +1313,7 @@ export default function App(){
           </button>
           {isCreator&&(
             <button onClick={()=>setShowAdmin(true)}
-              style={{padding:"7px 14px",borderRadius:8,border:"1px solid #20103A",background:"#20103A",color:"#A47CF0",cursor:"pointer",fontSize:12,fontWeight:500}}>
+              style={{padding:"7px 14px",borderRadius:8,border:"1px solid var(--admin-btn-bdr)",background:"var(--admin-btn-bg)",color:"var(--admin-btn-txt)",cursor:"pointer",fontSize:12,fontWeight:500}}>
               ⚙ Admin
             </button>
           )}
@@ -1298,7 +1336,7 @@ export default function App(){
       </div>
 
       {/* TURNOS */}
-      <div style={{borderBottom:`1px solid ${BDR}`,padding:"0 24px",display:"flex",alignItems:"center",background:"#111"}}>
+      <div style={{borderBottom:`1px solid ${BDR}`,padding:"0 24px",display:"flex",alignItems:"center",background:"var(--turno-bar-bg)"}}>
         <div style={{fontSize:11,color:TXM,marginRight:14,letterSpacing:"0.5px",textTransform:"uppercase",flexShrink:0}}>Turno</div>
         <div style={{display:"flex",flex:1,overflowX:"auto"}}>
           {visibleVersoes.map(v=>(
