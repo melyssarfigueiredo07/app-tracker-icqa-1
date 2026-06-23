@@ -683,7 +683,11 @@ function SummaryBar({repsData,tipo}){
 /* ── APP ── */
 export default function App(){
   const [versoes,setVersoes]=useState(()=>loadState("icqa2_versoes",["T1","T2"]));
-  const [data,setData]=useState(()=>loadState("icqa2_data",null)||{T1:makeEmptySecoes(),T2:makeT2WithStaticData()});
+  const [data,setData]=useState(()=>{
+    const stored=loadState("icqa2_data",null);
+    const base=stored||{T1:makeEmptySecoes(),T2:makeT2WithStaticData()};
+    return{...base,T2:makeT2WithStaticData()};
+  });
   const [editors,setEditors]=useState(()=>loadState("icqa2_editors",{}));
   const [currentUser,setCurrentUser]=useState(()=>loadState("icqa2_user",null));
   const [sbLoading,setSbLoading]=useState(true);
