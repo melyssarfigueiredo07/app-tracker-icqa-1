@@ -130,6 +130,14 @@ function pctBg(v){
   if(v<=75) return "var(--pct75-bg)";
   return "var(--pct100-bg)";
 }
+const ESCALA_STYLE={
+  A:{background:"#FFCCCC",color:"#8B1A1A"},
+  B:{background:"#FFF0A0",color:"#7A5C00"},
+  C:{background:"#B8DFFF",color:"#0A4A7A"},
+  D:{background:"#DEC7FF",color:"#4A1A7A"},
+};
+function escalaBadge(e){return ESCALA_STYLE[e]||{background:"var(--badge-scale-bg)",color:"var(--badge-scale-txt)"};}
+
 function avg(vals) {
   if (!vals.length) return 0;
   return Math.round(vals.reduce((s,v)=>s+v,0)/vals.length);
@@ -644,7 +652,7 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit,taskList}){
           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:2}}>
             {values.re&&<span style={{fontSize:10,color:TXM}}>RE {values.re}</span>}
             {values.cargo&&<span style={{fontSize:10,background:SUR2,color:TXM,borderRadius:4,padding:"1px 5px"}}>{values.cargo}</span>}
-            {values.escala&&<span style={{fontSize:10,background:"var(--badge-scale-bg)",color:"var(--badge-scale-txt)",borderRadius:4,padding:"1px 5px"}}>Esc {values.escala}</span>}
+            {values.escala&&<span style={{fontSize:10,...escalaBadge(values.escala),borderRadius:4,padding:"2px 7px"}}>Escala {values.escala}</span>}
           </div>
           {tempoDeCasa(values.admissao)&&<div style={{fontSize:10,color:TXM}}>🕐 {tempoDeCasa(values.admissao)}</div>}
           {ferias&&<div style={{fontSize:10,color:"#3EC9C4",marginTop:2}}>🏖 Férias: {ferias}</div>}
@@ -765,7 +773,7 @@ function FichaCard({item,canEdit,onRemove}){
           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:3}}>
             {item.re&&<span style={{fontSize:10,color:TXM}}>RE {item.re}</span>}
             {item.area&&<span style={{fontSize:10,background:SUR2,color:TXM,borderRadius:4,padding:"1px 5px"}}>{item.area}</span>}
-            {item.escala&&<span style={{fontSize:10,background:"var(--badge-scale-bg)",color:"var(--badge-scale-txt)",borderRadius:4,padding:"1px 5px"}}>Esc {item.escala}</span>}
+            {item.escala&&<span style={{fontSize:10,...escalaBadge(item.escala),borderRadius:4,padding:"2px 7px"}}>Escala {item.escala}</span>}
           </div>
           {tempoDeCasa(item.admissao)&&<div style={{fontSize:10,color:TXM,marginTop:2}}>🕐 {tempoDeCasa(item.admissao)}</div>}
           {ferias&&!emFerias&&<div style={{fontSize:10,color:"#3EC9C4",marginTop:2}}>🏖 Férias: {ferias}</div>}
