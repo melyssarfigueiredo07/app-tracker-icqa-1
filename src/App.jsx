@@ -658,7 +658,7 @@ function FichaCard({item,canEdit,onRemove}){
 }
 
 /* ── TREINAMENTO CARD ── */
-function TrCard({person,canEdit,onToggle}){
+function TrCard({person,canEdit,onToggle,onRemove}){
   const [expanded,setExpanded]=useState(false);
   const [showInfo,setShowInfo]=useState(false);
   const trainings=person.trainings||[];
@@ -702,11 +702,80 @@ function TrCard({person,canEdit,onToggle}){
           ))}
         </div>
       )}
-      <button onClick={()=>setExpanded(e=>!e)}
-        style={{padding:"6px 0",borderRadius:8,border:`1px solid ${expanded?Y+"66":BDR}`,background:expanded?"#1A1400":"none",cursor:"pointer",fontSize:12,color:expanded?Y:TXM}}>
-        {expanded?"✕ Fechar":`Ver ${trainings.length} treinamentos`}
-      </button>
+      <div style={{display:"flex",gap:8}}>
+        <button onClick={()=>setExpanded(e=>!e)}
+          style={{flex:1,padding:"6px 0",borderRadius:8,border:`1px solid ${expanded?Y+"66":BDR}`,background:expanded?"#1A1400":"none",cursor:"pointer",fontSize:12,color:expanded?Y:TXM}}>
+          {expanded?"✕ Fechar":`Ver ${trainings.length} treinamento${trainings.length!==1?"s":""}`}
+        </button>
+        {canEdit&&onRemove&&<button onClick={()=>onRemove(person.id)}
+          style={{padding:"6px 12px",borderRadius:8,border:"1px solid #3A0D1A",background:"none",cursor:"pointer",fontSize:12,color:"#E05C7A"}}>Remover</button>}
+      </div>
     </div>
+  );
+}
+
+/* ── ADD TREINAMENTO MODAL ── */
+function AddTrModal({onAdd,onClose}){
+  const [name,setName]=useState("");
+  const [role,setRole]=useState("");
+  const [admission,setAdmission]=useState("");
+  const [trainings,setTrainings]=useState([{id:"t"+Date.now(),name:"",done:false,date:"",note:"",doneDate:""}]);
+  const [err,setErr]=useState("");
+  function addRow(){setTrainings(ts=>[...ts,{id:"t"+Date.now()+Math.random(),name:"",done:false,date:"",note:"",doneDate:""}]);}
+  function removeRow(id){setTrainings(ts=>ts.filter(t=>t.id!==id));}
+  function updateRow(id,val){setTrainings(ts=>ts.map(t=>t.id===id?{...t,name:val}:t));}
+  function submit(){
+    if(!name.trim()){setErr("Digite o nome.");return;}
+    const trs=trainings.filter(t=>t.name.trim());
+    onAdd({name:name.trim().toUpperCase(),role:role.trim(),admission,trainings:trs});
+    onClose();
+  }
+  return(
+    <ModalWrap onClose={onClose} width={480}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <div style={{fontSize:16,fontWeight:500,color:TXT}}>Cadastrar Treinamento</div>
+        <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:TXM}}>×</button>
+      </div>
+      {err&&<div style={{background:"#3A0D1A",color:"#E05C7A",borderRadius:8,padding:"9px 13px",fontSize:13,marginBottom:14}}>{err}</div>}
+      <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
+        <div>
+          <label style={{fontSize:11,color:TXM,display:"block",marginBottom:4}}>Nome completo *</label>
+          <input autoFocus type="text" placeholder="Ex: JOÃO SILVA" value={name} onChange={e=>setName(e.target.value)}
+            style={{width:"100%",boxSizing:"border-box",background:SUR,border:`1px solid ${BDR}`,color:TXT,borderRadius:8,padding:"8px 12px",fontSize:13,outline:"none"}}/>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+          <div>
+            <label style={{fontSize:11,color:TXM,display:"block",marginBottom:4}}>Cargo</label>
+            <input type="text" placeholder="Ex: Op Log 1" value={role} onChange={e=>setRole(e.target.value)}
+              style={{width:"100%",boxSizing:"border-box",background:SUR,border:`1px solid ${BDR}`,color:TXT,borderRadius:8,padding:"8px 12px",fontSize:13,outline:"none"}}/>
+          </div>
+          <div>
+            <label style={{fontSize:11,color:TXM,display:"block",marginBottom:4}}>Admissão</label>
+            <input type="date" value={admission} onChange={e=>setAdmission(e.target.value)}
+              style={{width:"100%",boxSizing:"border-box",background:SUR,border:`1px solid ${BDR}`,color:TXT,borderRadius:8,padding:"8px 12px",fontSize:13,outline:"none",colorScheme:"dark"}}/>
+          </div>
+        </div>
+      </div>
+      <div style={{borderTop:`1px solid ${BDR}`,paddingTop:14,marginBottom:12}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <span style={{fontSize:12,color:TXM}}>Treinamentos</span>
+          <button onClick={addRow} style={{padding:"4px 12px",borderRadius:6,border:`1px solid ${BDR}`,background:"none",color:Y,cursor:"pointer",fontSize:12}}>+ Adicionar</button>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          {trainings.map(tr=>(
+            <div key={tr.id} style={{display:"flex",gap:6,alignItems:"center"}}>
+              <input type="text" placeholder="Nome do treinamento" value={tr.name} onChange={e=>updateRow(tr.id,e.target.value)}
+                style={{flex:1,background:SUR2,border:`1px solid ${BDR}`,color:TXT,borderRadius:7,padding:"6px 10px",fontSize:12,outline:"none"}}/>
+              <button onClick={()=>removeRow(tr.id)} style={{padding:"4px 8px",borderRadius:6,border:"1px solid #3A0D1A",background:"none",cursor:"pointer",fontSize:12,color:"#E05C7A"}}>×</button>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+        <button onClick={onClose} style={{padding:"8px 18px",borderRadius:8,border:`1px solid ${BDR}`,background:"none",cursor:"pointer",fontSize:13,color:TXM}}>Cancelar</button>
+        <button onClick={submit} style={{padding:"8px 18px",borderRadius:8,border:"none",background:Y,color:"#000",cursor:"pointer",fontSize:13,fontWeight:500}}>Cadastrar</button>
+      </div>
+    </ModalWrap>
   );
 }
 
@@ -760,6 +829,7 @@ export default function App(){
   const [showAdmin,setShowAdmin]=useState(false);
   const [showAdd,setShowAdd]=useState(false);
   const [showImport,setShowImport]=useState(false);
+  const [showAddTr,setShowAddTr]=useState(false);
   /* Show turno/CAD picker on every fresh page load (sessionStorage resets on tab close) */
   const [showPicker,setShowPicker]=useState(()=>!sessionStorage.getItem("icqa_picked"));
 
@@ -904,6 +974,23 @@ export default function App(){
       person.trainings=person.trainings.map(t=>t.id===trainId?{...t,done,doneDate:done?new Date().toISOString().slice(0,10):""}:t);
       trData[personId]=person;
       return{...d,[activeVer]:{...d[activeVer],"Treinamentos":{data:trData}}};
+    });
+  },[activeVer]);
+
+  const handleTrAddPerson=useCallback(({name,role,admission,trainings})=>{
+    const id="p"+Date.now();
+    setData(d=>{
+      const trData={...d[activeVer]["Treinamentos"].data};
+      trData[id]={name,role,admission,trainings};
+      return{...d,[activeVer]:{...d[activeVer],"Treinamentos":{data:trData}}};
+    });
+  },[activeVer]);
+
+  const handleTrRemovePerson=useCallback((personId)=>{
+    setData(d=>{
+      const trData={...d[activeVer]["Treinamentos"].data};
+      delete trData[personId];
+      return{...d,[activeVer]:{...d[activeVer],"Treinamentos":{data:{...trData}}}};
     });
   },[activeVer]);
 
@@ -1163,15 +1250,25 @@ export default function App(){
             <div style={{background:SUR,border:`1px solid ${BDR}`,borderRadius:12,padding:"12px 18px",marginBottom:18,display:"flex",alignItems:"center",gap:12}}>
               <div style={{fontSize:28,fontWeight:500,color:"#3EC97A"}}>{trList.length}</div>
               <div style={{fontSize:13,color:TXM}}>colaboradores em treinamento</div>
+              {canEdit&&<button onClick={()=>setShowAddTr(true)}
+                style={{marginLeft:"auto",padding:"7px 16px",borderRadius:8,border:"none",background:"#3EC97A",color:"#000",cursor:"pointer",fontSize:13,fontWeight:500}}>+ Cadastrar</button>}
             </div>
-            {trList.length===0?(
+            {!canEdit&&trList.length===0&&(
               <div style={{textAlign:"center",padding:"48px 0",color:TXM,fontSize:14}}>
                 {search?"Nenhum encontrado.":"Nenhum treinamento cadastrado."}
               </div>
-            ):(
+            )}
+            {canEdit&&trList.length===0&&(
+              <div style={{textAlign:"center",padding:"48px 0",color:TXM,fontSize:14,display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
+                <span>{search?"Nenhum encontrado.":"Nenhum treinamento cadastrado."}</span>
+                {!search&&<button onClick={()=>setShowAddTr(true)}
+                  style={{padding:"9px 22px",borderRadius:8,border:"none",background:"#3EC97A",color:"#000",cursor:"pointer",fontSize:13,fontWeight:500}}>+ Cadastrar primeiro treinamento</button>}
+              </div>
+            )}
+            {trList.length>0&&(
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:14}}>
                 {trList.map(([id,person])=>(
-                  <TrCard key={id} person={{...person,id}} canEdit={canEdit} onToggle={handleTrToggle}/>
+                  <TrCard key={id} person={{...person,id}} canEdit={canEdit} onToggle={handleTrToggle} onRemove={handleTrRemovePerson}/>
                 ))}
               </div>
             )}
@@ -1210,6 +1307,9 @@ export default function App(){
         <ImportModal versao={activeVer} secao={activeSec} tipo={activeTipo}
           onImport={records=>handleImport(activeVer,activeSec,activeTipo,records)}
           onClose={()=>setShowImport(false)}/>
+      )}
+      {showAddTr&&canEdit&&(
+        <AddTrModal onAdd={handleTrAddPerson} onClose={()=>setShowAddTr(false)}/>
       )}
     </div>
   );
