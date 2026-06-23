@@ -31,8 +31,8 @@ const TXM  = "#A0A0A0";
 const CREATOR_NAME = "Melyssa Rangel de Figueiredo";
 const CREATOR_PASS = "Mel@ICQA07";
 
-const SECOES = ["Desenvolvimento", "Fichas PS", "Treinamentos", "QA"];
-const SECAO_ICONS = { "Desenvolvimento":"⚡","Fichas PS":"👥","Treinamentos":"📋","QA":"🔍" };
+const SECOES = ["Desenvolvimento", "Fichas PS", "Treinamentos"];
+const SECAO_ICONS = { "Desenvolvimento":"⚡","Fichas PS":"👥","Treinamentos":"📋" };
 
 /* Performance sections use IC/QA pills; others have their own layout */
 const SECAO_TIPO = {
