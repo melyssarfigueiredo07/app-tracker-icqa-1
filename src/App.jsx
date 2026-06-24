@@ -700,17 +700,26 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit,taskList}){
               style={{width:"100%",boxSizing:"border-box",background:SUR2,border:`1px solid ${BDR}`,color:TXT,borderRadius:6,padding:"5px 8px",fontSize:12}}/>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 80px",gap:8}}>
-            {[["Início Férias","feriasIni"],["Fim Férias","feriasFim"]].map(([lbl,fld])=>(
-              <div key={fld}>
-                <label style={{fontSize:10,color:TXM,display:"block",marginBottom:3}}>{lbl}</label>
-                <input type="date" value={values[fld]||""} onChange={e=>liveUpdate(fld,e.target.value)}
-                  style={{width:"100%",boxSizing:"border-box",background:SUR2,border:`1px solid ${BDR}`,color:TXT,borderRadius:6,padding:"5px 8px",fontSize:12,colorScheme:"dark"}}/>
-              </div>
-            ))}
+            <div>
+              <label style={{fontSize:10,color:TXM,display:"block",marginBottom:3}}>Início Férias</label>
+              <input type="date" value={values.feriasIni||""} onChange={e=>{
+                const ini=e.target.value;
+                liveUpdate("feriasIni",ini);
+                if(ini&&values.feriasDias) liveUpdate("feriasFim",calcFeriasFim(ini,values.feriasDias));
+              }} style={{width:"100%",boxSizing:"border-box",background:SUR2,border:`1px solid ${BDR}`,color:TXT,borderRadius:6,padding:"5px 8px",fontSize:12,colorScheme:"dark"}}/>
+            </div>
+            <div>
+              <label style={{fontSize:10,color:TXM,display:"block",marginBottom:3}}>Fim Férias</label>
+              <input type="date" value={values.feriasFim||""} readOnly
+                style={{width:"100%",boxSizing:"border-box",background:SUR2,border:`1px solid ${BDR}`,color:TXM,borderRadius:6,padding:"5px 8px",fontSize:12,cursor:"default"}}/>
+            </div>
             <div>
               <label style={{fontSize:10,color:TXM,display:"block",marginBottom:3}}>Dias</label>
-              <input type="number" value={values.feriasDias||0} onChange={e=>liveUpdate("feriasDias",Number(e.target.value))}
-                style={{width:"100%",boxSizing:"border-box",background:SUR2,border:`1px solid ${BDR}`,color:TXT,borderRadius:6,padding:"5px 8px",fontSize:12}}/>
+              <input type="number" value={values.feriasDias||0} onChange={e=>{
+                const dias=Number(e.target.value);
+                liveUpdate("feriasDias",dias);
+                if(values.feriasIni&&dias) liveUpdate("feriasFim",calcFeriasFim(values.feriasIni,dias));
+              }} style={{width:"100%",boxSizing:"border-box",background:SUR2,border:`1px solid ${BDR}`,color:TXT,borderRadius:6,padding:"5px 8px",fontSize:12}}/>
             </div>
           </div>
           <div style={{borderTop:`1px solid ${BDR}`,paddingTop:10}}>
