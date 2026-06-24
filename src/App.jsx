@@ -750,9 +750,23 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit,taskList}){
 
 /* ── FICHA CARD (Fichas PS) ── */
 /* ── EDIT FICHA MODAL ── */
+function calcFeriasFim(ini,dias){
+  if(!ini||!dias) return "";
+  const d=new Date(ini);
+  d.setDate(d.getDate()+Number(dias));
+  return d.toISOString().slice(0,10);
+}
 function EditFichaModal({item,onSave,onClose}){
   const [form,setForm]=useState({...item});
-  function f(k,v){setForm(p=>({...p,[k]:v}));}
+  function f(k,v){
+    setForm(p=>{
+      const next={...p,[k]:v};
+      if(k==="feriasIni"||k==="feriasDias"){
+        next.feriasFim=calcFeriasFim(k==="feriasIni"?v:p.feriasIni, k==="feriasDias"?v:p.feriasDias);
+      }
+      return next;
+    });
+  }
   const field=(label,key,type="text",extra={})=>(
     <div style={{display:"flex",flexDirection:"column",gap:4}}>
       <label style={{fontSize:11,color:TXM,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase"}}>{label}</label>
@@ -795,7 +809,11 @@ function EditFichaModal({item,onSave,onClose}){
         {field("Observações","obs")}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
           {field("Início férias","feriasIni","date")}
-          {field("Fim férias","feriasFim","date")}
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            <label style={{fontSize:11,color:TXM,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase"}}>Fim férias</label>
+            <input type="date" value={form.feriasFim||""} readOnly
+              style={{background:"var(--sur2)",border:`1px solid ${BDR}`,color:TXM,borderRadius:8,padding:"8px 11px",fontSize:13,width:"100%",boxSizing:"border-box",cursor:"default"}}/>
+          </div>
           {field("Dias de férias","feriasDias","number",{min:0,max:60})}
         </div>
       </div>
