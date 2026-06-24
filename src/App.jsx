@@ -1202,7 +1202,13 @@ export default function App(){
   const secTipo=SECAO_TIPO[activeSec];
   const secData=data?.[activeVer]?.[activeSec]||{};
   const repsData=secTipo==="performance"?(secData[activeTipo]||{}):{};
-  const repList=Object.keys(repsData).filter(r=>r.toLowerCase().includes(search.toLowerCase())).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  const repList=Object.keys(repsData).filter(r=>{
+    if(!r.toLowerCase().includes(search.toLowerCase())) return false;
+    const adm=repsData[r]?.admissao||"";
+    if(admFilter.ini&&adm&&adm<admFilter.ini) return false;
+    if(admFilter.fim&&adm&&adm>admFilter.fim) return false;
+    return true;
+  }).sort((a,b)=>a.localeCompare(b,"pt-BR"));
 
   /* Save Desenvolvimento to Supabase */
   const saveTrackerToSb=useCallback(async(newData)=>{
@@ -1558,7 +1564,7 @@ export default function App(){
       {/* SEÇÕES */}
       <div style={{borderBottom:`1px solid ${BDR}`,padding:"0 24px",display:"flex",overflowX:"auto"}}>
         {SECOES.map(s=>(
-          <button key={s} onClick={()=>{setActiveSec(s);setSearch("");}}
+          <button key={s} onClick={()=>{setActiveSec(s);setSearch("");setAdmFilter({ini:"",fim:""});}}
             style={{...tabStyle(activeSec===s),display:"flex",alignItems:"center",gap:6}}>
             <span>{SECAO_ICONS[s]}</span>{s}
             <span style={{fontSize:11,borderRadius:20,padding:"1px 7px",fontWeight:500,
@@ -1590,6 +1596,22 @@ export default function App(){
                 ⚙ Tarefas
               </button>
             )}
+          </div>
+        )}
+
+        {/* ADMISSÃO FILTER — performance only */}
+        {secTipo==="performance"&&(
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}}>
+            <span style={{fontSize:11,color:TXM,whiteSpace:"nowrap"}}>Admissão:</span>
+            <input type="date" value={admFilter.ini} onChange={e=>setAdmFilter(f=>({...f,ini:e.target.value}))}
+              title="Data de admissão — de"
+              style={{background:"var(--inp-bg)",border:`1px solid ${BDR}`,color:TXT,borderRadius:7,padding:"5px 8px",fontSize:12,width:130}}/>
+            <span style={{fontSize:11,color:TXM}}>até</span>
+            <input type="date" value={admFilter.fim} onChange={e=>setAdmFilter(f=>({...f,fim:e.target.value}))}
+              title="Data de admissão — até"
+              style={{background:"var(--inp-bg)",border:`1px solid ${BDR}`,color:TXT,borderRadius:7,padding:"5px 8px",fontSize:12,width:130}}/>
+            {(admFilter.ini||admFilter.fim)&&<button onClick={()=>setAdmFilter({ini:"",fim:""})}
+              style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${BDR}`,background:"none",color:TXM,cursor:"pointer",fontSize:11}}>✕ Limpar</button>}
           </div>
         )}
 
