@@ -704,8 +704,8 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit,taskList}){
               <label style={{fontSize:10,color:TXM,display:"block",marginBottom:3}}>Início Férias</label>
               <input type="date" value={values.feriasIni||""} onChange={e=>{
                 const ini=e.target.value;
-                liveUpdate("feriasIni",ini);
-                if(ini&&values.feriasDias) liveUpdate("feriasFim",calcFeriasFim(ini,values.feriasDias));
+                const fim=calcFeriasFim(ini,values.feriasDias);
+                onUpdate(rep,{...values,feriasIni:ini,feriasFim:fim});
               }} style={{width:"100%",boxSizing:"border-box",background:SUR2,border:`1px solid ${BDR}`,color:TXT,borderRadius:6,padding:"5px 8px",fontSize:12,colorScheme:"dark"}}/>
             </div>
             <div>
@@ -717,8 +717,8 @@ function RepCard({rep,values,tipo,onUpdate,onRemove,canEdit,taskList}){
               <label style={{fontSize:10,color:TXM,display:"block",marginBottom:3}}>Dias</label>
               <input type="number" value={values.feriasDias||0} onChange={e=>{
                 const dias=Number(e.target.value);
-                liveUpdate("feriasDias",dias);
-                if(values.feriasIni&&dias) liveUpdate("feriasFim",calcFeriasFim(values.feriasIni,dias));
+                const fim=calcFeriasFim(values.feriasIni,dias);
+                onUpdate(rep,{...values,feriasDias:dias,feriasFim:fim});
               }} style={{width:"100%",boxSizing:"border-box",background:SUR2,border:`1px solid ${BDR}`,color:TXT,borderRadius:6,padding:"5px 8px",fontSize:12}}/>
             </div>
           </div>
