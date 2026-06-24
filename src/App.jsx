@@ -1129,6 +1129,7 @@ export default function App(){
   const [showAdd,setShowAdd]=useState(false);
   const [showImport,setShowImport]=useState(false);
   const [showAddPs,setShowAddPs]=useState(false);
+  const [admFilter,setAdmFilter]=useState({ini:"",fim:""});
   const [showAddTr,setShowAddTr]=useState(false);
   const [showTaskMgr,setShowTaskMgr]=useState(false);
   /* Show picker only when no last turno saved (user already identified + had a turno before) */
@@ -1339,7 +1340,12 @@ export default function App(){
     background:"none",fontWeight:active?500:400,color:active?Y:TXM,transition:"color 0.2s",
   });
 
-  const fichaList=(secData.list||[]).filter(x=>x.name?.toLowerCase().includes(search.toLowerCase()));
+  const fichaList=(secData.list||[]).filter(x=>{
+    if(!x.name?.toLowerCase().includes(search.toLowerCase())) return false;
+    if(admFilter.ini&&x.admissao&&x.admissao<admFilter.ini) return false;
+    if(admFilter.fim&&x.admissao&&x.admissao>admFilter.fim) return false;
+    return true;
+  });
   const trList=Object.entries(secData.data||{}).filter(([,p])=>p.name?.toLowerCase().includes(search.toLowerCase()));
 
   /* ── IDENTIFICATION SCREEN ── */
@@ -1643,9 +1649,21 @@ export default function App(){
           const byArea=area=>fichaList.filter(x=>(x.area||"Outros")===area);
           return(
           <>
-            <div style={{background:SUR,border:`1px solid ${BDR}`,borderRadius:12,padding:"12px 18px",marginBottom:18,display:"flex",alignItems:"center",gap:12}}>
+            <div style={{background:SUR,border:`1px solid ${BDR}`,borderRadius:12,padding:"12px 18px",marginBottom:18,display:"flex",flexWrap:"wrap",alignItems:"center",gap:12}}>
               <div style={{fontSize:28,fontWeight:500,color:Y}}>{fichaList.length}</div>
               <div style={{fontSize:13,color:TXM,flex:1}}>fichas cadastradas · {areas.length} áreas</div>
+              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                <span style={{fontSize:11,color:TXM,whiteSpace:"nowrap"}}>Admissão:</span>
+                <input type="date" value={admFilter.ini} onChange={e=>setAdmFilter(f=>({...f,ini:e.target.value}))}
+                  placeholder="De" title="Data de admissão — de"
+                  style={{background:"var(--inp-bg)",border:`1px solid ${BDR}`,color:TXT,borderRadius:7,padding:"5px 8px",fontSize:12,width:130}}/>
+                <span style={{fontSize:11,color:TXM}}>até</span>
+                <input type="date" value={admFilter.fim} onChange={e=>setAdmFilter(f=>({...f,fim:e.target.value}))}
+                  placeholder="Até" title="Data de admissão — até"
+                  style={{background:"var(--inp-bg)",border:`1px solid ${BDR}`,color:TXT,borderRadius:7,padding:"5px 8px",fontSize:12,width:130}}/>
+                {(admFilter.ini||admFilter.fim)&&<button onClick={()=>setAdmFilter({ini:"",fim:""})}
+                  style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${BDR}`,background:"none",color:TXM,cursor:"pointer",fontSize:11}}>✕ Limpar</button>}
+              </div>
               {canEdit&&<button onClick={()=>setShowAddPs(true)} style={{padding:"6px 14px",borderRadius:8,border:`1px solid ${Y}`,background:"none",color:Y,cursor:"pointer",fontSize:12,fontWeight:600}}>+ Adicionar PS</button>}
             </div>
             {fichaList.length===0?(
