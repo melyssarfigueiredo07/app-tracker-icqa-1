@@ -765,7 +765,7 @@ function calcFeriasFim(ini,dias){
   d.setDate(d.getDate()+Number(dias));
   return d.toISOString().slice(0,10);
 }
-function EditFichaModal({item,onSave,onClose}){
+function EditFichaModal({item,onSave,onClose,titulo}){
   const [form,setForm]=useState({...item});
   function f(k,v){
     setForm(p=>{
@@ -797,7 +797,7 @@ function EditFichaModal({item,onSave,onClose}){
     <ModalWrap onClose={onClose} width={520}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
         <div>
-          <div style={{fontSize:16,fontWeight:500,color:TXT}}>Editar Ficha PS</div>
+          <div style={{fontSize:16,fontWeight:500,color:TXT}}>{titulo||"Editar Ficha PS"}</div>
           <div style={{fontSize:12,color:TXM,marginTop:2}}>{item.name}</div>
         </div>
         <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:TXM}}>×</button>
@@ -1128,6 +1128,7 @@ export default function App(){
   const [showAdmin,setShowAdmin]=useState(false);
   const [showAdd,setShowAdd]=useState(false);
   const [showImport,setShowImport]=useState(false);
+  const [showAddPs,setShowAddPs]=useState(false);
   const [showAddTr,setShowAddTr]=useState(false);
   const [showTaskMgr,setShowTaskMgr]=useState(false);
   /* Show picker only when no last turno saved (user already identified + had a turno before) */
@@ -1311,6 +1312,13 @@ export default function App(){
   },[activeVer]);
 
   /* Fichas remove */
+  const handleFichaAdd=useCallback((novo)=>{
+    setData(d=>{
+      const list=[...(d[activeVer]["Fichas PS"].list||[]),novo];
+      return{...d,[activeVer]:{...d[activeVer],"Fichas PS":{list}}};
+    });
+  },[activeVer]);
+
   const handleFichaRemove=useCallback((id)=>{
     setData(d=>{
       const list=(d[activeVer]["Fichas PS"].list||[]).filter(x=>x.id!==id);
@@ -1637,7 +1645,8 @@ export default function App(){
           <>
             <div style={{background:SUR,border:`1px solid ${BDR}`,borderRadius:12,padding:"12px 18px",marginBottom:18,display:"flex",alignItems:"center",gap:12}}>
               <div style={{fontSize:28,fontWeight:500,color:Y}}>{fichaList.length}</div>
-              <div style={{fontSize:13,color:TXM}}>fichas cadastradas · {areas.length} áreas</div>
+              <div style={{fontSize:13,color:TXM,flex:1}}>fichas cadastradas · {areas.length} áreas</div>
+              {canEdit&&<button onClick={()=>setShowAddPs(true)} style={{padding:"6px 14px",borderRadius:8,border:`1px solid ${Y}`,background:"none",color:Y,cursor:"pointer",fontSize:12,fontWeight:600}}>+ Adicionar PS</button>}
             </div>
             {fichaList.length===0?(
               <div style={{textAlign:"center",padding:"48px 0",color:TXM,fontSize:14}}>
@@ -1727,6 +1736,14 @@ export default function App(){
         <ImportModal versao={activeVer} secao={activeSec} tipo={activeTipo} taskList={tarefas[activeTipo]}
           onImport={records=>handleImport(activeVer,activeSec,activeTipo,records)}
           onClose={()=>setShowImport(false)}/>
+      )}
+      {showAddPs&&canEdit&&(
+        <EditFichaModal
+          item={{id:"ps_"+Date.now(),name:"",re:"",cpf:"",ldap:"",telefone:"",area:"",escala:"",admissao:"",contEmer:"",endereco:"",obs:"",feriasIni:"",feriasFim:"",feriasDias:0}}
+          onSave={novo=>{handleFichaAdd(novo);setShowAddPs(false);}}
+          onClose={()=>setShowAddPs(false)}
+          titulo="Nova Ficha PS"
+        />
       )}
       {showAddTr&&canEdit&&(
         <AddTrModal onAdd={handleTrAddPerson} onClose={()=>setShowAddTr(false)}/>
